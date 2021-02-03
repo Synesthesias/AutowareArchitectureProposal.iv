@@ -17,6 +17,7 @@
 #include "pointcloud_preprocessor/compare_map_filter/distance_based_compare_map_filter_nodelet.h"
 #include <pluginlib/class_list_macros.h>
 
+#include <pcl/common/io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/segment_differences.h>
@@ -43,14 +44,35 @@ void DistanceBasedCompareMapFilterNodelet::filter(
     output = *input;
     return;
   }
-  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_input(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_output(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr pcl_input(new pcl::PointCloud<pcl::PointXYZINormal>);
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr pcl_output(new pcl::PointCloud<pcl::PointXYZINormal>);
+  pcl::fromROSMsg(*input, *pcl_xyz);
   pcl::fromROSMsg(*input, *pcl_input);
   pcl_output->points.reserve(pcl_input->points.size());
-  pcl::getPointCloudDifference<pcl::PointXYZ>(
-    *pcl_input, *map_ptr_, distance_threshold_ * distance_threshold_, tree_, *pcl_output);
+  double threshold = distance_threshold_ * distance_threshold_;
+
+  // We're interested in a single nearest neighbor only
+  std::vector<int> nn_indices (1);
+  std::vector<float> nn_distances (1);
+
+  // Iterate through the source data set
+  for (size_t i = 0; i < pcl_xyz->points.size (); ++i)
+  {
+    // Search for the closest point in the target data set (number of neighbors to find = 1)
+    if (!tree_->nearestKSearch (pcl_xyz->points[i], 1, nn_indices, nn_distances))
+    {
+      ROS_WARN ("No neighbor found for point %zu (%f %f %f)!", i, pcl_xyz->points[i].x, pcl_xyz->points[i].y, pcl_xyz->points[i].z);
+      continue;
+    }
+
+    if (nn_distances[0] < threshold)
+      pcl_output->points.push_back (pcl_input->points[i]);
+  }
 
   pcl::toROSMsg(*pcl_output, output);
+  if (output.width == 0)
+    pcl::toROSMsg(*pcl_input, output);
   output.header = input->header;
 }
 
