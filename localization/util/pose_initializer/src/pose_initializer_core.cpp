@@ -206,7 +206,7 @@ bool PoseInitializer::callAlignService(
     *output_pose_msg_ptr = srv.response.pose_with_cov;
     return true;
   } else {
-    ROS_ERROR("[pose_initializer] could not call NDT Align Server");
+    ROS_WARN("[pose_initializer] could not call NDT Align Server");
     return false;
   }
 }
