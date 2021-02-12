@@ -71,8 +71,6 @@ void DistanceBasedCompareMapFilterNodelet::filter(
   }
 
   pcl::toROSMsg(*pcl_output, output);
-  if (output.width == 0)
-    pcl::toROSMsg(*pcl_input, output);
   output.header = input->header;
 }
 
