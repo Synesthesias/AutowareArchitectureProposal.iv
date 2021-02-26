@@ -17,6 +17,8 @@
 #include "pointcloud_preprocessor/compare_map_filter/distance_based_compare_map_filter_nodelet.h"
 #include <pluginlib/class_list_macros.h>
 
+#include <std_msgs/Float32.h>
+
 #include <pcl/common/io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
@@ -26,6 +28,7 @@ namespace pointcloud_preprocessor
 {
 bool DistanceBasedCompareMapFilterNodelet::child_init(ros::NodeHandle & nh, bool & has_service)
 {
+  pub_ratio_ = advertise<std_msgs::Float32>(*pnh_, "pub/ratio", 1);
   // Enable the dynamic reconfigure service
   has_service = true;
   srv_ = boost::make_shared<
@@ -72,6 +75,10 @@ void DistanceBasedCompareMapFilterNodelet::filter(
 
   pcl::toROSMsg(*pcl_output, output);
   output.header = input->header;
+
+  std_msgs::Float32 ratio;
+  ratio.data = static_cast<float>(output.row_step/output.point_step)/static_cast<float>(input->row_step/input->point_step);
+  pub_ratio_.publish(ratio);
 }
 
 void DistanceBasedCompareMapFilterNodelet::input_target_callback(const PointCloudConstPtr & map)

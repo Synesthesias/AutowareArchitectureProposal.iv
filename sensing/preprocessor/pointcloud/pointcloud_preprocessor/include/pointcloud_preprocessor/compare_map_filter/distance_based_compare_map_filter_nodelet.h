@@ -38,6 +38,7 @@ protected:
 
 private:
   ros::Subscriber sub_map_;
+  ros::Publisher pub_ratio_;
   PointCloudConstPtr map_ptr_;
   double distance_threshold_;
   pcl::search::Search<pcl::PointXYZ>::Ptr tree_;
