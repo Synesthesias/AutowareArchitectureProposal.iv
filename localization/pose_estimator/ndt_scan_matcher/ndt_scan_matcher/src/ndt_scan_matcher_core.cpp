@@ -524,7 +524,7 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(
   }
 
   // generateParticle
-  const auto initial_pose_array = createRandomPoseArray(initial_pose_with_cov, 100);
+  const auto initial_pose_array = createRandomPoseArray(initial_pose_with_cov, 1000);
 
   std::vector<Particle> particle_array;
   pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);

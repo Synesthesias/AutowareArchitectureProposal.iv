@@ -137,12 +137,7 @@ void PoseInitializer::callbackGNSSPoseCov(
   getHeight(*pose_cov_msg_ptr, add_height_pose_msg_ptr);
 
   // TODO
-  add_height_pose_msg_ptr->pose.covariance[0] = 1.0;
-  add_height_pose_msg_ptr->pose.covariance[1 * 6 + 1] = 1.0;
-  add_height_pose_msg_ptr->pose.covariance[2 * 6 + 2] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[3 * 6 + 3] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[4 * 6 + 4] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[5 * 6 + 5] = 3.14;
+  add_height_pose_msg_ptr->pose.covariance = pose_cov_msg_ptr->pose.covariance;
 
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(
     new geometry_msgs::PoseWithCovarianceStamped);
