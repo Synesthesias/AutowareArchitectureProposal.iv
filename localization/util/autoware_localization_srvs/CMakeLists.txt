@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   PoseWithCovarianceStamped.srv
+  PoseArray.srv
 )
 
 generate_messages(
