@@ -42,6 +42,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include "autoware_localization_srvs/PoseWithCovarianceStamped.h"
+#include "autoware_localization_srvs/PoseArray.h"
 // #include <pcl/registration/ndt.h>
 // #include "pcl_registration/ndt.h"
 #include "ndt/omp.h"
@@ -86,6 +87,9 @@ private:
   bool serviceNDTAlign(
     autoware_localization_srvs::PoseWithCovarianceStamped::Request & req,
     autoware_localization_srvs::PoseWithCovarianceStamped::Response & res);
+  bool serviceNDTAlignPoseArray(
+    autoware_localization_srvs::PoseArray::Request & req,
+    autoware_localization_srvs::PoseArray::Response & res);
 
   void callbackMapPoints(const sensor_msgs::PointCloud2::ConstPtr & pointcloud2_msg_ptr);
   void callbackSensorPoints(const sensor_msgs::PointCloud2::ConstPtr & pointcloud2_msg_ptr);
@@ -95,6 +99,9 @@ private:
   geometry_msgs::PoseWithCovarianceStamped alignUsingMonteCarlo(
     const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> & ndt_ptr,
     const geometry_msgs::PoseWithCovarianceStamped & initial_pose_with_cov);
+  geometry_msgs::PoseWithCovarianceStamped alignUsingMonteCarlo(
+    const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> & ndt_ptr,
+    const geometry_msgs::PoseArray & initial_pose_array);
 
   void updateTransforms();
 
@@ -135,6 +142,7 @@ private:
   ros::Publisher diagnostics_pub_;
 
   ros::ServiceServer service_;
+  ros::ServiceServer service_ndt_align_pose_array_;
 
   tf2_ros::Buffer tf2_buffer_;
   tf2_ros::TransformListener tf2_listener_;

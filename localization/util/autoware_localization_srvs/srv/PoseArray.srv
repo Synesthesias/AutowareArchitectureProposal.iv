@@ -1,0 +1,3 @@
+geometry_msgs/PoseArray pose_array
+---
+geometry_msgs/PoseStamped pose

@@ -126,6 +126,7 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
   diagnostics_pub_ = nh_.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 10);
 
   service_ = nh_.advertiseService("ndt_align_srv", &NDTScanMatcher::serviceNDTAlign, this);
+  service_ndt_align_pose_array_ = nh_.advertiseService("ndt_align_pose_array_srv", &NDTScanMatcher::serviceNDTAlignPoseArray, this);
   // setup dynamic reconfigure server
   // f_ = boost::bind(&NDTScanMatcher::configCallback, this, _1, _2);
   // server_.setCallback(f_);
@@ -210,6 +211,37 @@ bool NDTScanMatcher::serviceNDTAlign(
   res.pose_with_cov = alignUsingMonteCarlo(ndt_ptr_, *mapTF_initial_pose_msg_ptr);
   key_value_stdmap_["state"] = "Sleeping";
   res.pose_with_cov.pose.covariance = req.pose_with_cov.pose.covariance;
+
+  return true;
+}
+
+bool NDTScanMatcher::serviceNDTAlignPoseArray(
+  autoware_localization_srvs::PoseArray::Request & req,
+  autoware_localization_srvs::PoseArray::Response & res)
+{
+  if(req.pose_array.header.frame_id != map_frame_)
+  {
+    ROS_ERROR("Pose array frame_id '%s' is invalid. Transform to '%s' frame in advance.", req.pose_array.header.frame_id.c_str(), map_frame_.c_str());
+    return false;
+  }
+
+  if (ndt_ptr_->getInputTarget() == nullptr) {
+    ROS_WARN("No MAP!");
+    return false;
+  }
+
+  if (ndt_ptr_->getInputSource() == nullptr) {
+    ROS_WARN("No Points!");
+    return false;
+  }
+
+  // mutex Map
+  std::lock_guard<std::mutex> lock(ndt_map_mtx_);
+
+  key_value_stdmap_["state"] = "Aligning";
+  res.pose.pose = alignUsingMonteCarlo(ndt_ptr_, req.pose_array).pose.pose;
+  key_value_stdmap_["state"] = "Sleeping";
+  res.pose.header = req.pose_array.header;
 
   return true;
 }
@@ -526,6 +558,18 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(
   // generateParticle
   const auto initial_pose_array = createRandomPoseArray(initial_pose_with_cov, 1000);
 
+  return alignUsingMonteCarlo(ndt_ptr, initial_pose_array);
+}
+
+geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(
+  const std::shared_ptr<NormalDistributionsTransformBase<PointSource, PointTarget>> & ndt_ptr,
+  const geometry_msgs::PoseArray & initial_pose_array)
+{
+  if (ndt_ptr->getInputTarget() == nullptr || ndt_ptr->getInputSource() == nullptr) {
+    ROS_WARN("No Map or Sensor PointCloud");
+    return geometry_msgs::PoseWithCovarianceStamped();
+  }
+
   std::vector<Particle> particle_array;
   pcl::PointCloud<PointSource>::Ptr output_cloud(new pcl::PointCloud<PointSource>);
 
@@ -555,7 +599,7 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(
       *sensor_points_baselinkTF_ptr, *sensor_points_mapTF_ptr, result_pose_matrix);
     sensor_msgs::PointCloud2 sensor_points_mapTF_msg;
     pcl::toROSMsg(*sensor_points_mapTF_ptr, sensor_points_mapTF_msg);
-    sensor_points_mapTF_msg.header.stamp = initial_pose_with_cov.header.stamp;
+    sensor_points_mapTF_msg.header.stamp = initial_pose_array.header.stamp;
     sensor_points_mapTF_msg.header.frame_id = map_frame_;
     sensor_aligned_pose_pub_.publish(sensor_points_mapTF_msg);
   }
