@@ -244,12 +244,12 @@ static geometry_msgs::PoseArray createRandomPoseArray(
 {
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
-  std::normal_distribution<> x_distribution(0.0, std::sqrt(base_pose_with_cov.pose.covariance[0]));
-  std::normal_distribution<> y_distribution(0.0, std::sqrt(base_pose_with_cov.pose.covariance[1 * 6 + 1]));
-  std::normal_distribution<> z_distribution(0.0, std::sqrt(base_pose_with_cov.pose.covariance[2 * 6 + 2]));
-  std::normal_distribution<> roll_distribution(0.0, std::sqrt(base_pose_with_cov.pose.covariance[3 * 6 + 3]));
-  std::normal_distribution<> pitch_distribution(0.0, std::sqrt(base_pose_with_cov.pose.covariance[4 * 6 + 4]));
-  std::normal_distribution<> yaw_distribution(0.0, std::sqrt(base_pose_with_cov.pose.covariance[5 * 6 + 5]));
+  std::normal_distribution<> x_distribution(0.0, base_pose_with_cov.pose.covariance[0]);
+  std::normal_distribution<> y_distribution(0.0, base_pose_with_cov.pose.covariance[1 * 6 + 1]);
+  std::normal_distribution<> z_distribution(0.0, base_pose_with_cov.pose.covariance[2 * 6 + 2]);
+  std::normal_distribution<> roll_distribution(0.0, base_pose_with_cov.pose.covariance[3 * 6 + 3]);
+  std::normal_distribution<> pitch_distribution(0.0, base_pose_with_cov.pose.covariance[4 * 6 + 4]);
+  std::normal_distribution<> yaw_distribution(0.0, base_pose_with_cov.pose.covariance[5 * 6 + 5]);
 
   const auto base_rpy = getRPY(base_pose_with_cov);
 

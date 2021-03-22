@@ -556,7 +556,7 @@ geometry_msgs::PoseWithCovarianceStamped NDTScanMatcher::alignUsingMonteCarlo(
   }
 
   // generateParticle
-  const auto initial_pose_array = createRandomPoseArray(initial_pose_with_cov, 1000);
+  const auto initial_pose_array = createRandomPoseArray(initial_pose_with_cov, 100);
 
   return alignUsingMonteCarlo(ndt_ptr, initial_pose_array);
 }
