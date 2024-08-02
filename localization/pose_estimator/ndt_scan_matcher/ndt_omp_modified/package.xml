@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>ndt_omp</name>
+  <name>ndt_omp_modified</name>
   <version>0.1.0</version>
   <description>OpenMP boosted NDT and GICP algorithms</description>
 

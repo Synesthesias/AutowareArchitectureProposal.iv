@@ -19,7 +19,7 @@
 
 #include "ndt/base.h"
 
-#include <ndt_omp/ndt_omp.h>
+#include <ndt_omp_modified/ndt_omp.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
