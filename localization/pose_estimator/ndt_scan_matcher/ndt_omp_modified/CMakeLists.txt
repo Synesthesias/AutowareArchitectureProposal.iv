@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(ndt_omp)
+project(ndt_omp_modified)
 
 # -mavx causes a lot of errors!!
 add_definitions(-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
@@ -65,6 +65,6 @@ install(TARGETS ndt_omp
 )
 
 ## Install project namespaced headers
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY include/ndt_omp/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

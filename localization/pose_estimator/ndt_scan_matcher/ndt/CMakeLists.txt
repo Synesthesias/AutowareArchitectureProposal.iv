@@ -5,7 +5,7 @@ add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   ndt_pcl_modified
-  ndt_omp
+  ndt_omp_modified
 )
 find_package(PCL REQUIRED COMPONENTS common)
 
