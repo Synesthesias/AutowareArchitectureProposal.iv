@@ -29,13 +29,10 @@ void Callback(const PointCloud::ConstPtr & clouds)
   const unsigned int sum = clouds->points.size();
   double coordinate[3] = {0, 0, 0};
   for (int i = 0; i < sum; i++) {
-    coordinate[0] += clouds->points[i].x;
-    coordinate[1] += clouds->points[i].y;
-    coordinate[2] += clouds->points[i].z;
+    coordinate[0] += clouds->points[i].x / sum;
+    coordinate[1] += clouds->points[i].y / sum;
+    coordinate[2] += clouds->points[i].z / sum;
   }
-  coordinate[0] = coordinate[0] / sum;
-  coordinate[1] = coordinate[1] / sum;
-  coordinate[2] = coordinate[2] / sum;
 
   geometry_msgs::TransformStamped static_transformStamped;
   static_transformStamped.header.stamp = ros::Time::now();
