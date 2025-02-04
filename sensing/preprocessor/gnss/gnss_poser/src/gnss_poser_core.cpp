@@ -82,8 +82,9 @@ void GNSSPoser::callbackNavSatFix(const sensor_msgs::NavSatFix::ConstPtr & nav_s
   fixed_pub_.publish(is_fixed_msg);
 
   if (!is_fixed) {
-    ROS_WARN_STREAM_THROTTLE(1, "Not Fixed Topic. Skipping Calculate.");
-    return;
+    ROS_WARN_STREAM_THROTTLE(1, "Not Fixed Topic, But Enforcing Calculate.");
+    // ROS_WARN_STREAM_THROTTLE(1, "Not Fixed Topic. Skipping Calculate.");
+    // return;
   }
 
   // get position in coordinate_system
