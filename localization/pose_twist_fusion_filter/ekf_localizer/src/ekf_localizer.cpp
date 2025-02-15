@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "ekf_localizer/ekf_localizer.h"
+#include "ekf_localizer/ekf_localizer.hpp"
 
 // clang-format off
 #define PRINT_MAT(X) std::cout << #X << ":\n" << X << std::endl << std::endl
