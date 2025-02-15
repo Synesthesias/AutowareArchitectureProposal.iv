@@ -57,8 +57,8 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr sub_twist_;               //!< @brief measurement twist subscriber
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_pose_with_cov_;       //!< @brief measurement pose with covariance subscriber
   rclcpp::Subscription<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr sub_twist_with_cov_;      //!< @brief measurement twist with covariance subscriber
-  ros::Timer timer_control_;                //!< @brief time for ekf calculation callback
-  ros::Timer timer_tf_;                     //!< @brief timer to send transform
+  rclcpp::TimerBase::SharedPtr timer_control_;                //!< @brief time for ekf calculation callback
+  rclcpp::TimerBase::SharedPtr timer_tf_;                     //!< @brief timer to send transform
   tf2_ros::TransformBroadcaster tf_br_;     //!< @brief tf broadcaster
 
   TimeDelayKalmanFilter ekf_;  //!< @brief  extended kalman filter instance.
