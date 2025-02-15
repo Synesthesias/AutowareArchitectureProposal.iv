@@ -22,7 +22,8 @@
 #define DEBUG_PRINT_MAT(X) { if (show_debug_info_) { std::cout << #X << ": " << X << std::endl; } }
 
 // clang-format on
-EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bias, vx, wz */)
+EKFLocalizer::EKFLocalizer(const rclcpp::NodeOptions & node_options)
+: Node("ekf_localizer", node_options), dim_x_(6 /* x, y, yaw, yaw_bias, vx, wz */)
 {
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
   pnh_.param("predict_frequency", ekf_rate_, double(50.0));

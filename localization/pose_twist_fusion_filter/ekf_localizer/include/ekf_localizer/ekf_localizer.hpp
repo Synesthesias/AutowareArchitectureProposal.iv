@@ -36,10 +36,10 @@
 #include "kalman_filter/kalman_filter.hpp"
 #include "kalman_filter/time_delay_kalman_filter.hpp"
 
-class EKFLocalizer
+class EKFLocalizer : public rclcpp::Node
 {
 public:
-  EKFLocalizer();
+  explicit EKFLocalizer(const rclcpp::NodeOptions & node_options);
   ~EKFLocalizer();
 
 private:
