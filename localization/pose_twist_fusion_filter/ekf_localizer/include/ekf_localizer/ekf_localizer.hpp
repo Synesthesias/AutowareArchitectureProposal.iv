@@ -174,13 +174,13 @@ private:
    * @brief compute EKF update with pose measurement
    * @param pose measurement value
    */
-  void measurementUpdatePose(const geometry_msgs::PoseStamped & pose);
+  void measurementUpdatePose(const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief compute EKF update with pose measurement
    * @param twist measurement value
    */
-  void measurementUpdateTwist(const geometry_msgs::TwistStamped & twist);
+  void measurementUpdateTwist(const geometry_msgs::msg::TwistStamped & twist);
 
   /**
    * @brief check whether a measurement value falls within the mahalanobis distance threshold
@@ -198,7 +198,7 @@ private:
    * @brief get transform from frame_id
    */
   bool getTransformFromTF(
-    std::string parent_frame, std::string child_frame, geometry_msgs::TransformStamped & transform);
+    std::string parent_frame, std::string child_frame, geometry_msgs::msg::TransformStamped & transform);
 
   /**
    * @brief normalize yaw angle
@@ -210,7 +210,7 @@ private:
   /**
    * @brief create quaternion from roll, pitch and yaw.
    */
-  geometry_msgs::Quaternion createQuaternionFromRPY(double r, double p, double y) const;
+  geometry_msgs::msg::Quaternion createQuaternionFromRPY(double r, double p, double y) const;
 
   /**
    * @brief set current EKF estimation result to current_ekf_pose_ & current_ekf_twist_
