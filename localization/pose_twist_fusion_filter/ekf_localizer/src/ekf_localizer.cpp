@@ -209,7 +209,7 @@ void EKFLocalizer::timerTFCallback()
 {
   if (current_ekf_pose_.header.frame_id == "") return;
 
-  geometry_msgs::TransformStamped transformStamped;
+  geometry_msgs::msg::TransformStamped transformStamped;
   transformStamped.header.stamp = now();
   transformStamped.header.frame_id = current_ekf_pose_.header.frame_id;
   transformStamped.child_frame_id = "base_link";
@@ -229,7 +229,7 @@ void EKFLocalizer::timerTFCallback()
  * getTransformFromTF
  */
 bool EKFLocalizer::getTransformFromTF(
-  std::string parent_frame, std::string child_frame, geometry_msgs::TransformStamped & transform)
+  std::string parent_frame, std::string child_frame, geometry_msgs::msg::TransformStamped & transform)
 {
   tf2_ros::Buffer tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
@@ -254,7 +254,7 @@ bool EKFLocalizer::getTransformFromTF(
  */
 void EKFLocalizer::callbackInitialPose(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr initialpose)
 {
-  geometry_msgs::TransformStamped transform;
+  geometry_msgs::msg::TransformStamped transform;
   if (!getTransformFromTF(pose_frame_id_, initialpose.header.frame_id, transform)) {
     RCLCPP_ERROR(
       get_logger(), "[EKF] TF transform failed. parent = %s, child = %s", pose_frame_id_.c_str(),
@@ -294,7 +294,7 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::msg::PoseWithCovaria
 void EKFLocalizer::callbackPose(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
 {
   if (!use_pose_with_covariance_) {
-    current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(*msg);
+    current_pose_ptr_ = std::make_shared<geometry_msgs::msg::PoseStamped>(*msg);
   }
 };
 
@@ -305,10 +305,10 @@ void EKFLocalizer::callbackPoseWithCovariance(
   const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg)
 {
   if (use_pose_with_covariance_) {
-    geometry_msgs::PoseStamped pose;
+    geometry_msgs::msg::PoseStamped pose;
     pose.header = msg->header;
     pose.pose = msg->pose.pose;
-    current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(pose);
+    current_pose_ptr_ = std::make_shared<geometry_msgs::msg::PoseStamped>(pose);
     current_pose_covariance_ = msg->pose.covariance;
   }
 };
@@ -319,7 +319,7 @@ void EKFLocalizer::callbackPoseWithCovariance(
 void EKFLocalizer::callbackTwist(const geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
 {
   if (!use_twist_with_covariance_) {
-    current_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
+    current_twist_ptr_ = std::make_shared<geometry_msgs::msg::TwistStamped>(*msg);
   }
 };
 
@@ -330,10 +330,10 @@ void EKFLocalizer::callbackTwistWithCovariance(
   const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr msg)
 {
   if (use_twist_with_covariance_) {
-    geometry_msgs::TwistStamped twist;
+    geometry_msgs::msg::TwistStamped twist;
     twist.header = msg->header;
     twist.twist = msg->twist.twist;
-    current_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(twist);
+    current_twist_ptr_ = std::make_shared<geometry_msgs::msg::TwistStamped>(twist);
     current_twist_covariance_ = msg->twist.covariance;
   }
 };
@@ -436,7 +436,7 @@ void EKFLocalizer::predictKinematicsModel()
 /*
  * measurementUpdatePose
  */
-void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose)
+void EKFLocalizer::measurementUpdatePose(const geometry_msgs::msg::PoseStamped & pose)
 {
   if (pose.header.frame_id != pose_frame_id_) {
     RCLCPP_WARN_THROTTLE(
@@ -552,7 +552,7 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose
 /*
  * measurementUpdateTwist
  */
-void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped & twist)
+void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::msg::TwistStamped & twist)
 {
   if (twist.header.frame_id != "base_link") {
     RCLCPP_WARN_THROTTLE(
@@ -665,7 +665,7 @@ bool EKFLocalizer::mahalanobisGate(
 /*
  * createQuaternionFromRPY
  */
-geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double p, double y) const
+geometry_msgs::msg::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double p, double y) const
 {
   tf2::Quaternion q;
   q.setRPY(r, p, y);
@@ -688,7 +688,7 @@ void EKFLocalizer::publishEstimateResult()
   pub_pose_no_yawbias_.publish(current_ekf_pose_no_yawbias_);
 
   /* publish latest pose with covariance */
-  geometry_msgs::PoseWithCovarianceStamped pose_cov;
+  geometry_msgs::msg::PoseWithCovarianceStamped pose_cov;
   pose_cov.header.stamp = current_time;
   pose_cov.header.frame_id = current_ekf_pose_.header.frame_id;
   pose_cov.pose.pose = current_ekf_pose_.pose;
@@ -703,7 +703,7 @@ void EKFLocalizer::publishEstimateResult()
   pose_cov.pose.covariance[35] = P(IDX::YAW, IDX::YAW);
   pub_pose_cov_.publish(pose_cov);
 
-  geometry_msgs::PoseWithCovarianceStamped pose_cov_no_yawbias = pose_cov;
+  geometry_msgs::msg::PoseWithCovarianceStamped pose_cov_no_yawbias = pose_cov;
   pose_cov_no_yawbias.pose.pose = current_ekf_pose_no_yawbias_.pose;
   pub_pose_cov_no_yawbias_.publish(pose_cov_no_yawbias);
 
@@ -711,7 +711,7 @@ void EKFLocalizer::publishEstimateResult()
   pub_twist_.publish(current_ekf_twist_);
 
   /* publish latest twist with covariance */
-  geometry_msgs::TwistWithCovarianceStamped twist_cov;
+  geometry_msgs::msg::TwistWithCovarianceStamped twist_cov;
   twist_cov.header.stamp = current_time;
   twist_cov.header.frame_id = current_ekf_twist_.header.frame_id;
   twist_cov.twist.twist = current_ekf_twist_.twist;
@@ -722,13 +722,13 @@ void EKFLocalizer::publishEstimateResult()
   pub_twist_cov_.publish(twist_cov);
 
   /* publish yaw bias */
-  std_msgs::Float64 yawb;
+  std_msgs::msg::Float64 yawb;
   yawb.data = X(IDX::YAWB);
   pub_yaw_bias_.publish(yawb);
 
   /* debug measured pose */
   if (current_pose_ptr_ != nullptr) {
-    geometry_msgs::PoseStamped p;
+    geometry_msgs::msg::PoseStamped p;
     p = *current_pose_ptr_;
     p.header.stamp = current_time;
     pub_measured_pose_.publish(p);
@@ -740,7 +740,7 @@ void EKFLocalizer::publishEstimateResult()
   if (current_pose_ptr_ != nullptr)
     pose_yaw = tf2::getYaw(current_pose_ptr_->pose.orientation) * RAD2DEG;
 
-  std_msgs::Float64MultiArray msg;
+  std_msgs::msg::Float64MultiArray msg;
   msg.data.push_back(X(IDX::YAW) * RAD2DEG);   // [0] ekf yaw angle
   msg.data.push_back(pose_yaw);                // [1] measurement yaw angle
   msg.data.push_back(X(IDX::YAWB) * RAD2DEG);  // [2] yaw bias
