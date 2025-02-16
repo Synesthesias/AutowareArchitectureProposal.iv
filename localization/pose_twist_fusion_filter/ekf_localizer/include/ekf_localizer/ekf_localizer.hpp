@@ -128,12 +128,12 @@ private:
   /**
    * @brief computes update & prediction of EKF for each ekf_dt_[s] time
    */
-  void timerCallback(const ros::TimerEvent & e);
+  void timerCallback();
 
   /**
    * @brief publish tf for tf_rate [Hz]
    */
-  void timerTFCallback(const ros::TimerEvent & e);
+  void timerTFCallback();
 
   /**
    * @brief set pose measurement
