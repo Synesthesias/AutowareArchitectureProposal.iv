@@ -455,7 +455,7 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::msg::PoseStamped &
   const rclcpp::Time t_curr = now();
 
   /* Calculate delay step */
-  double delay_time = (t_curr - pose.header.stamp).toSec() + pose_additional_delay_;
+  double delay_time = (t_curr - pose.header.stamp).seconds() + pose_additional_delay_;
   if (delay_time < 0.0) {
     delay_time = 0.0;
     RCLCPP_WARN_THROTTLE(
@@ -571,7 +571,7 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::msg::TwistStamped
   const rclcpp::Time t_curr = now();
 
   /* Calculate delay step */
-  double delay_time = (t_curr - twist.header.stamp).toSec() + twist_additional_delay_;
+  double delay_time = (t_curr - twist.header.stamp).seconds() + twist_additional_delay_;
   if (delay_time < 0.0) {
     RCLCPP_WARN_THROTTLE(
       get_logger(), *get_clock(), std::chrono::milliseconds(1000).count(),
