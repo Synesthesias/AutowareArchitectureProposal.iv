@@ -69,8 +69,12 @@ EKFLocalizer::EKFLocalizer(const rclcpp::NodeOptions & node_options)
 
   /* initialize ros system */
 
-  timer_control_ = nh_.createTimer(ros::Duration(ekf_dt_), &EKFLocalizer::timerCallback, this);
-  timer_tf_ = nh_.createTimer(ros::Duration(1.0 / tf_rate_), &EKFLocalizer::timerTFCallback, this);
+  timer_control_ = rclcpp::create_timer(
+    this, get_clock(), rclcpp::Duration::from_seconds(ekf_dt_),
+    std::bind(&EKFLocalizer::timerCallback, this));
+  timer_tf_ = rclcpp::create_timer(
+    this, get_clock(), rclcpp::Duration::from_seconds(1.0 / tf_rate_),
+    std::bind(&EKFLocalizer::timerTFCallback, this));
   pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("ekf_pose", 1);
   pub_pose_cov_ =
     nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 1);
