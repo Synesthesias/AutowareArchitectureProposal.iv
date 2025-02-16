@@ -18,7 +18,7 @@
 
 // clang-format off
 #define PRINT_MAT(X) std::cout << #X << ":\n" << X << std::endl << std::endl
-#define DEBUG_INFO(...) { if (show_debug_info_) { ROS_INFO(__VA_ARGS__); } }
+#define DEBUG_INFO(...) { if (show_debug_info_) { RCLCPP_INFO(__VA_ARGS__); } }
 #define DEBUG_PRINT_MAT(X) { if (show_debug_info_) { std::cout << #X << ": " << X << std::endl; } }
 
 // clang-format on
@@ -116,40 +116,40 @@ EKFLocalizer::~EKFLocalizer(){};
  */
 void EKFLocalizer::timerCallback(const ros::TimerEvent & e)
 {
-  DEBUG_INFO("========================= timer called =========================");
+  DEBUG_INFO(get_logger(), "========================= timer called =========================");
 
   /* predict model in EKF */
   auto start = std::chrono::system_clock::now();
-  DEBUG_INFO("------------------------- start prediction -------------------------");
+  DEBUG_INFO(get_logger(), "------------------------- start prediction -------------------------");
   predictKinematicsModel();
   double elapsed =
     std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start)
       .count();
-  DEBUG_INFO("[EKF] predictKinematicsModel calculation time = %f [ms]", elapsed * 1.0e-6);
-  DEBUG_INFO("------------------------- end prediction -------------------------\n");
+  DEBUG_INFO(get_logger(), "[EKF] predictKinematicsModel calculation time = %f [ms]", elapsed * 1.0e-6);
+  DEBUG_INFO(get_logger(), "------------------------- end prediction -------------------------\n");
 
   /* pose measurement update */
   if (current_pose_ptr_ != nullptr) {
-    DEBUG_INFO("------------------------- start Pose -------------------------");
+    DEBUG_INFO(get_logger(), "------------------------- start Pose -------------------------");
     start = std::chrono::system_clock::now();
     measurementUpdatePose(*current_pose_ptr_);
     elapsed =
       std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start)
         .count();
-    DEBUG_INFO("[EKF] measurementUpdatePose calculation time = %f [ms]", elapsed * 1.0e-6);
-    DEBUG_INFO("------------------------- end Pose -------------------------\n");
+    DEBUG_INFO(get_logger(), "[EKF] measurementUpdatePose calculation time = %f [ms]", elapsed * 1.0e-6);
+    DEBUG_INFO(get_logger(), "------------------------- end Pose -------------------------\n");
   }
 
   /* twist measurement update */
   if (current_twist_ptr_ != nullptr) {
-    DEBUG_INFO("------------------------- start twist -------------------------");
+    DEBUG_INFO(get_logger(), "------------------------- start twist -------------------------");
     start = std::chrono::system_clock::now();
     measurementUpdateTwist(*current_twist_ptr_);
     elapsed =
       std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start)
         .count();
-    DEBUG_INFO("[EKF] measurementUpdateTwist calculation time = %f [ms]", elapsed * 1.0e-6);
-    DEBUG_INFO("------------------------- end twist -------------------------\n");
+    DEBUG_INFO(get_logger(), "[EKF] measurementUpdateTwist calculation time = %f [ms]", elapsed * 1.0e-6);
+    DEBUG_INFO(get_logger(), "------------------------- end twist -------------------------\n");
   }
 
   /* set current pose, twist */
@@ -242,7 +242,7 @@ bool EKFLocalizer::getTransformFromTF(
       transform = tf_buffer.lookupTransform(parent_frame, child_frame, ros::Time(0));
       return true;
     } catch (tf2::TransformException & ex) {
-      ROS_WARN("%s", ex.what());
+      RCLCPP_WARN(get_logger(), "%s", ex.what());
       ros::Duration(0.1).sleep();
     }
   }
@@ -256,8 +256,8 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
 {
   geometry_msgs::TransformStamped transform;
   if (!getTransformFromTF(pose_frame_id_, initialpose.header.frame_id, transform)) {
-    ROS_ERROR(
-      "[EKF] TF transform failed. parent = %s, child = %s", pose_frame_id_.c_str(),
+    RCLCPP_ERROR(
+      get_logger(), "[EKF] TF transform failed. parent = %s, child = %s", pose_frame_id_.c_str(),
       initialpose.header.frame_id.c_str());
   };
 
@@ -439,8 +439,9 @@ void EKFLocalizer::predictKinematicsModel()
 void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose)
 {
   if (pose.header.frame_id != pose_frame_id_) {
-    ROS_WARN_DELAYED_THROTTLE(
-      2, "pose frame_id is %s, but pose_frame is set as %s. They must be same.",
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(2000).count(),
+      "pose frame_id is %s, but pose_frame is set as %s. They must be same.",
       pose.header.frame_id.c_str(), pose_frame_id_.c_str());
   }
   Eigen::MatrixXd X_curr(dim_x_, 1);  // curent state
@@ -454,19 +455,20 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose
   double delay_time = (t_curr - pose.header.stamp).toSec() + pose_additional_delay_;
   if (delay_time < 0.0) {
     delay_time = 0.0;
-    ROS_WARN_DELAYED_THROTTLE(
-      1.0, "Pose time stamp is inappropriate, set delay to 0[s]. delay = %f", delay_time);
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(1000).count(),
+      "Pose time stamp is inappropriate, set delay to 0[s]. delay = %f", delay_time);
   }
   int delay_step = std::roundf(delay_time / ekf_dt_);
   if (delay_step > extend_state_step_ - 1) {
-    ROS_WARN_DELAYED_THROTTLE(
-      1.0,
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(1000).count(),
       "Pose delay exceeds the compensation limit, ignored. delay: %f[s], limit = "
       "extend_state_step * ekf_dt : %f [s]",
       delay_time, extend_state_step_ * ekf_dt_);
     return;
   }
-  DEBUG_INFO("delay_time: %f [s]", delay_time);
+  DEBUG_INFO(get_logger(), "delay_time: %f [s]", delay_time);
 
   /* Set yaw */
   const double yaw_curr = ekf_.getXelement((unsigned int)(delay_step * dim_x_ + IDX::YAW));
@@ -480,8 +482,8 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose
   y << pose.pose.position.x, pose.pose.position.y, yaw;
 
   if (isnan(y.array()).any() || isinf(y.array()).any()) {
-    ROS_WARN(
-      "[EKF] pose measurement matrix includes NaN of Inf. ignore update. check pose message.");
+    RCLCPP_WARN(
+      get_logger(), "[EKF] pose measurement matrix includes NaN of Inf. ignore update. check pose message.");
     return;
   }
 
@@ -493,8 +495,8 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose
   ekf_.getLatestP(P_curr);
   P_y = P_curr.block(0, 0, dim_y, dim_y);
   if (!mahalanobisGate(pose_gate_dist_, y_ekf, y, P_y)) {
-    ROS_WARN_DELAYED_THROTTLE(
-      2.0,
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(2000).count(),
       "[EKF] Pose measurement update, mahalanobis distance is over limit. ignore "
       "measurement data.");
     return;
@@ -553,7 +555,9 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose
 void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped & twist)
 {
   if (twist.header.frame_id != "base_link") {
-    ROS_WARN_DELAYED_THROTTLE(2.0, "twist frame_id must be base_link");
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(2000).count(),
+      "twist frame_id must be base_link");
   }
 
   Eigen::MatrixXd X_curr(dim_x_, 1);  // curent state
@@ -566,28 +570,29 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped & tw
   /* Calculate delay step */
   double delay_time = (t_curr - twist.header.stamp).toSec() + twist_additional_delay_;
   if (delay_time < 0.0) {
-    ROS_WARN_DELAYED_THROTTLE(
-      1.0, "Twist time stamp is inappropriate (delay = %f [s]), set delay to 0[s].", delay_time);
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(1000).count(),
+      "Twist time stamp is inappropriate (delay = %f [s]), set delay to 0[s].", delay_time);
     delay_time = 0.0;
   }
   int delay_step = std::roundf(delay_time / ekf_dt_);
   if (delay_step > extend_state_step_ - 1) {
-    ROS_WARN_DELAYED_THROTTLE(
-      1.0,
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(1000).count(),
       "Twist delay exceeds the compensation limit, ignored. delay: %f[s], limit = "
       "extend_state_step * ekf_dt : %f [s]",
       delay_time, extend_state_step_ * ekf_dt_);
     return;
   }
-  DEBUG_INFO("delay_time: %f [s]", delay_time);
+  DEBUG_INFO(get_logger(), "delay_time: %f [s]", delay_time);
 
   /* Set measurement matrix */
   Eigen::MatrixXd y(dim_y, 1);
   y << twist.twist.linear.x, twist.twist.angular.z;
 
   if (isnan(y.array()).any() || isinf(y.array()).any()) {
-    ROS_WARN(
-      "[EKF] twist measurement matrix includes NaN of Inf. ignore update. check twist message.");
+    RCLCPP_WARN(
+      get_logger(), "[EKF] twist measurement matrix includes NaN of Inf. ignore update. check twist message.");
     return;
   }
 
@@ -599,8 +604,8 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped & tw
   ekf_.getLatestP(P_curr);
   P_y = P_curr.block(4, 4, dim_y, dim_y);
   if (!mahalanobisGate(twist_gate_dist_, y_ekf, y, P_y)) {
-    ROS_WARN_DELAYED_THROTTLE(
-      2.0,
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), std::chrono::milliseconds(2000).count(),
       "[EKF] Twist measurement update, mahalanobis distance is over limit. ignore "
       "measurement data.");
     return;
@@ -648,7 +653,7 @@ bool EKFLocalizer::mahalanobisGate(
 {
   Eigen::MatrixXd mahalanobis_squared = (x - obj_x).transpose() * cov.inverse() * (x - obj_x);
   DEBUG_INFO(
-    "measurement update: mahalanobis = %f, gate limit = %f", std::sqrt(mahalanobis_squared(0)),
+    get_logger(), "measurement update: mahalanobis = %f, gate limit = %f", std::sqrt(mahalanobis_squared(0)),
     dist_max);
   if (mahalanobis_squared(0) > dist_max * dist_max) {
     return false;
