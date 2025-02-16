@@ -114,7 +114,7 @@ EKFLocalizer::~EKFLocalizer(){};
 /*
  * timerCallback
  */
-void EKFLocalizer::timerCallback(const ros::TimerEvent & e)
+void EKFLocalizer::timerCallback()
 {
   DEBUG_INFO(get_logger(), "========================= timer called =========================");
 
@@ -205,7 +205,7 @@ void EKFLocalizer::setCurrentResult()
 /*
  * timerTFCallback
  */
-void EKFLocalizer::timerTFCallback(const ros::TimerEvent & e)
+void EKFLocalizer::timerTFCallback()
 {
   if (current_ekf_pose_.header.frame_id == "") return;
 
