@@ -255,10 +255,10 @@ bool EKFLocalizer::getTransformFromTF(
 void EKFLocalizer::callbackInitialPose(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr initialpose)
 {
   geometry_msgs::msg::TransformStamped transform;
-  if (!getTransformFromTF(pose_frame_id_, initialpose.header.frame_id, transform)) {
+  if (!getTransformFromTF(pose_frame_id_, initialpose->header.frame_id, transform)) {
     RCLCPP_ERROR(
       get_logger(), "[EKF] TF transform failed. parent = %s, child = %s", pose_frame_id_.c_str(),
-      initialpose.header.frame_id.c_str());
+      initialpose->header.frame_id.c_str());
   };
 
   Eigen::MatrixXd X(dim_x_, 1);
@@ -266,19 +266,19 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::msg::PoseWithCovaria
 
   // TODO need mutex
 
-  X(IDX::X) = initialpose.pose.pose.position.x + transform.transform.translation.x;
-  X(IDX::Y) = initialpose.pose.pose.position.y + transform.transform.translation.y;
+  X(IDX::X) = initialpose->pose.pose.position.x + transform.transform.translation.x;
+  X(IDX::Y) = initialpose->pose.pose.position.y + transform.transform.translation.y;
   current_ekf_pose_.pose.position.z =
-    initialpose.pose.pose.position.z + transform.transform.translation.z;
+    initialpose->pose.pose.position.z + transform.transform.translation.z;
   X(IDX::YAW) =
-    tf2::getYaw(initialpose.pose.pose.orientation) + tf2::getYaw(transform.transform.rotation);
+    tf2::getYaw(initialpose->pose.pose.orientation) + tf2::getYaw(transform.transform.rotation);
   X(IDX::YAWB) = 0.0;
   X(IDX::VX) = 0.0;
   X(IDX::WZ) = 0.0;
 
-  P(IDX::X, IDX::X) = initialpose.pose.covariance[0];
-  P(IDX::Y, IDX::Y) = initialpose.pose.covariance[6 + 1];
-  P(IDX::YAW, IDX::YAW) = initialpose.pose.covariance[6 * 5 + 5];
+  P(IDX::X, IDX::X) = initialpose->pose.covariance[0];
+  P(IDX::Y, IDX::Y) = initialpose->pose.covariance[6 + 1];
+  P(IDX::YAW, IDX::YAW) = initialpose->pose.covariance[6 * 5 + 5];
   P(IDX::YAWB, IDX::YAWB) = 0.0001;
   P(IDX::VX, IDX::VX) = 0.01;
   P(IDX::WZ, IDX::WZ) = 0.01;
@@ -684,8 +684,8 @@ void EKFLocalizer::publishEstimateResult()
   ekf_.getLatestP(P);
 
   /* publish latest pose */
-  pub_pose_.publish(current_ekf_pose_);
-  pub_pose_no_yawbias_.publish(current_ekf_pose_no_yawbias_);
+  pub_pose_->publish(current_ekf_pose_);
+  pub_pose_no_yawbias_->publish(current_ekf_pose_no_yawbias_);
 
   /* publish latest pose with covariance */
   geometry_msgs::msg::PoseWithCovarianceStamped pose_cov;
@@ -701,14 +701,14 @@ void EKFLocalizer::publishEstimateResult()
   pose_cov.pose.covariance[30] = P(IDX::YAW, IDX::X);
   pose_cov.pose.covariance[31] = P(IDX::YAW, IDX::Y);
   pose_cov.pose.covariance[35] = P(IDX::YAW, IDX::YAW);
-  pub_pose_cov_.publish(pose_cov);
+  pub_pose_cov_->publish(pose_cov);
 
   geometry_msgs::msg::PoseWithCovarianceStamped pose_cov_no_yawbias = pose_cov;
   pose_cov_no_yawbias.pose.pose = current_ekf_pose_no_yawbias_.pose;
-  pub_pose_cov_no_yawbias_.publish(pose_cov_no_yawbias);
+  pub_pose_cov_no_yawbias_->publish(pose_cov_no_yawbias);
 
   /* publish latest twist */
-  pub_twist_.publish(current_ekf_twist_);
+  pub_twist_->publish(current_ekf_twist_);
 
   /* publish latest twist with covariance */
   geometry_msgs::msg::TwistWithCovarianceStamped twist_cov;
@@ -719,19 +719,19 @@ void EKFLocalizer::publishEstimateResult()
   twist_cov.twist.covariance[5] = P(IDX::VX, IDX::WZ);
   twist_cov.twist.covariance[30] = P(IDX::WZ, IDX::VX);
   twist_cov.twist.covariance[35] = P(IDX::WZ, IDX::WZ);
-  pub_twist_cov_.publish(twist_cov);
+  pub_twist_cov_->publish(twist_cov);
 
   /* publish yaw bias */
   std_msgs::msg::Float64 yawb;
   yawb.data = X(IDX::YAWB);
-  pub_yaw_bias_.publish(yawb);
+  pub_yaw_bias_->publish(yawb);
 
   /* debug measured pose */
   if (current_pose_ptr_ != nullptr) {
     geometry_msgs::msg::PoseStamped p;
     p = *current_pose_ptr_;
     p.header.stamp = current_time;
-    pub_measured_pose_.publish(p);
+    pub_measured_pose_->publish(p);
   }
 
   /* debug publish */
@@ -744,7 +744,7 @@ void EKFLocalizer::publishEstimateResult()
   msg.data.push_back(X(IDX::YAW) * RAD2DEG);   // [0] ekf yaw angle
   msg.data.push_back(pose_yaw);                // [1] measurement yaw angle
   msg.data.push_back(X(IDX::YAWB) * RAD2DEG);  // [2] yaw bias
-  pub_debug_.publish(msg);
+  pub_debug_->publish(msg);
 }
 
 double EKFLocalizer::normalizeYaw(const double & yaw) const
