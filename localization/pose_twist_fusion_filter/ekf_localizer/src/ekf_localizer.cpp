@@ -75,31 +75,38 @@ EKFLocalizer::EKFLocalizer(const rclcpp::NodeOptions & node_options)
   timer_tf_ = rclcpp::create_timer(
     this, get_clock(), rclcpp::Duration::from_seconds(1.0 / tf_rate_),
     std::bind(&EKFLocalizer::timerTFCallback, this));
-  pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("ekf_pose", 1);
+
+  using std::placeholders::_1;
+  pub_pose_ = create_publisher<geometry_msgs::msg::PoseStamped>("ekf_pose", 1);
   pub_pose_cov_ =
-    nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 1);
-  pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
-  pub_twist_cov_ =
-    nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("ekf_twist_with_covariance", 1);
-  pub_yaw_bias_ = pnh_.advertise<std_msgs::Float64>("estimated_yaw_bias", 1);
-  pub_pose_no_yawbias_ = nh_.advertise<geometry_msgs::PoseStamped>("ekf_pose_without_yawbias", 1);
-  pub_pose_cov_no_yawbias_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(
+    create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 1);
+  pub_twist_ = create_publisher<geometry_msgs::msg::TwistStamped>("ekf_twist", 1);
+  pub_twist_cov_ = create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
+    "ekf_twist_with_covariance", 1);
+  pub_yaw_bias_ =
+    create_publisher<std_msgs::msg::Float64>("estimated_yaw_bias", 1);
+  pub_pose_no_yawbias_ =
+    create_publisher<geometry_msgs::msg::PoseStamped>("ekf_pose_without_yawbias", 1);
+  pub_pose_cov_no_yawbias_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "ekf_pose_with_covariance_without_yawbias", 1);
-  sub_initialpose_ = nh_.subscribe("initialpose", 1, &EKFLocalizer::callbackInitialPose, this);
-  sub_pose_with_cov_ =
-    nh_.subscribe("in_pose_with_covariance", 1, &EKFLocalizer::callbackPoseWithCovariance, this);
-  sub_pose_ = nh_.subscribe("in_pose", 1, &EKFLocalizer::callbackPose, this);
-  sub_twist_with_cov_ =
-    nh_.subscribe("in_twist_with_covariance", 1, &EKFLocalizer::callbackTwistWithCovariance, this);
-  sub_twist_ = nh_.subscribe("in_twist", 1, &EKFLocalizer::callbackTwist, this);
+  sub_initialpose_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "initialpose", 1, std::bind(&EKFLocalizer::callbackInitialPose, this, _1));
+  sub_pose_with_cov_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "in_pose_with_covariance", 1, std::bind(&EKFLocalizer::callbackPoseWithCovariance, this, _1));
+  sub_pose_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+    "in_pose", 1, std::bind(&EKFLocalizer::callbackPose, this, _1));
+  sub_twist_with_cov_ = create_subscription<geometry_msgs::msg::TwistWithCovarianceStamped>(
+    "in_twist_with_covariance", 1, std::bind(&EKFLocalizer::callbackTwistWithCovariance, this, _1));
+  sub_twist_ = create_subscription<geometry_msgs::msg::TwistStamped>(
+    "in_twist", 1, std::bind(&EKFLocalizer::callbackTwist, this, _1));
 
   dim_x_ex_ = dim_x_ * extend_state_step_;
 
   initEKF();
 
   /* debug */
-  pub_debug_ = pnh_.advertise<std_msgs::Float64MultiArray>("debug", 1);
-  pub_measured_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("debug/measured_pose", 1);
+  pub_debug_ = create_publisher<std_msgs::msg::Float64MultiArray>("debug", 1);
+  pub_measured_pose_ = create_publisher<geometry_msgs::msg::PoseStamped>("debug/measured_pose", 1);
 };
 
 EKFLocalizer::~EKFLocalizer(){};
