@@ -122,8 +122,8 @@ private:
   geometry_msgs::msg::PoseStamped
     current_ekf_pose_no_yawbias_;                  //!< @brief current estimated pose w/o yaw bias
   geometry_msgs::msg::TwistStamped current_ekf_twist_;  //!< @brief current estimated twist
-  boost::array<double, 36ul> current_pose_covariance_;
-  boost::array<double, 36ul> current_twist_covariance_;
+  std::array<double, 36ul> current_pose_covariance_;
+  std::array<double, 36ul> current_twist_covariance_;
 
   /**
    * @brief computes update & prediction of EKF for each ekf_dt_[s] time
