@@ -252,7 +252,7 @@ bool EKFLocalizer::getTransformFromTF(
 /*
  * callbackInitialPose
  */
-void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped & initialpose)
+void EKFLocalizer::callbackInitialPose(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr initialpose)
 {
   geometry_msgs::TransformStamped transform;
   if (!getTransformFromTF(pose_frame_id_, initialpose.header.frame_id, transform)) {
@@ -291,7 +291,7 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
 /*
  * callbackPose
  */
-void EKFLocalizer::callbackPose(const geometry_msgs::PoseStamped::ConstPtr & msg)
+void EKFLocalizer::callbackPose(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg)
 {
   if (!use_pose_with_covariance_) {
     current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(*msg);
@@ -302,7 +302,7 @@ void EKFLocalizer::callbackPose(const geometry_msgs::PoseStamped::ConstPtr & msg
  * callbackPoseWithCovariance
  */
 void EKFLocalizer::callbackPoseWithCovariance(
-  const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg)
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg)
 {
   if (use_pose_with_covariance_) {
     geometry_msgs::PoseStamped pose;
@@ -316,7 +316,7 @@ void EKFLocalizer::callbackPoseWithCovariance(
 /*
  * callbackTwist
  */
-void EKFLocalizer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & msg)
+void EKFLocalizer::callbackTwist(const geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
 {
   if (!use_twist_with_covariance_) {
     current_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*msg);
@@ -327,7 +327,7 @@ void EKFLocalizer::callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & m
  * callbackTwistWithCovariance
  */
 void EKFLocalizer::callbackTwistWithCovariance(
-  const geometry_msgs::TwistWithCovarianceStamped::ConstPtr & msg)
+  const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr msg)
 {
   if (use_twist_with_covariance_) {
     geometry_msgs::TwistStamped twist;
