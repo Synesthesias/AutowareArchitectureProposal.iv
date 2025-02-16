@@ -25,38 +25,38 @@
 EKFLocalizer::EKFLocalizer(const rclcpp::NodeOptions & node_options)
 : Node("ekf_localizer", node_options), dim_x_(6 /* x, y, yaw, yaw_bias, vx, wz */)
 {
-  pnh_.param("show_debug_info", show_debug_info_, bool(false));
-  pnh_.param("predict_frequency", ekf_rate_, double(50.0));
+  show_debug_info_ = declare_parameter("show_debug_info", false);
+  ekf_rate_ = declare_parameter("predict_frequency", 50.0);
   ekf_dt_ = 1.0 / std::max(ekf_rate_, 0.1);
-  pnh_.param("tf_rate", tf_rate_, double(10.0));
-  pnh_.param("enable_yaw_bias_estimation", enable_yaw_bias_estimation_, bool(true));
-  pnh_.param("extend_state_step", extend_state_step_, int(50));
-  pnh_.param("pose_frame_id", pose_frame_id_, std::string("map"));
+  tf_rate_ = declare_parameter("tf_rate", 10.0);
+  enable_yaw_bias_estimation_ = declare_parameter("enable_yaw_bias_estimation", true);
+  extend_state_step_ = declare_parameter("extend_state_step", 50);
+  pose_frame_id_ = declare_parameter("pose_frame_id", std::string("map"));
 
   /* pose measurement */
-  pnh_.param("pose_additional_delay", pose_additional_delay_, double(0.0));
-  pnh_.param("pose_measure_uncertainty_time", pose_measure_uncertainty_time_, double(0.01));
-  pnh_.param("pose_rate", pose_rate_, double(10.0));  // used for covariance calculation
-  pnh_.param("pose_gate_dist", pose_gate_dist_, double(10000.0));  // Mahalanobis limit
-  pnh_.param("pose_stddev_x", pose_stddev_x_, double(0.05));
-  pnh_.param("pose_stddev_y", pose_stddev_y_, double(0.05));
-  pnh_.param("pose_stddev_yaw", pose_stddev_yaw_, double(0.035));
-  pnh_.param("use_pose_with_covariance", use_pose_with_covariance_, bool(false));
+  pose_additional_delay_ = declare_parameter("pose_additional_delay", 0.0);
+  pose_measure_uncertainty_time_ = declare_parameter("pose_measure_uncertainty_time", 0.01);
+  pose_rate_ = declare_parameter("pose_rate", 10.0);  // used for covariance calculation
+  pose_gate_dist_ = declare_parameter("pose_gate_dist", 10000.0);  // Mahalanobis limit
+  pose_stddev_x_ = declare_parameter("pose_stddev_x", 0.05);
+  pose_stddev_y_ = declare_parameter("pose_stddev_y", 0.05);
+  pose_stddev_yaw_ = declare_parameter("pose_stddev_yaw", 0.035);
+  use_pose_with_covariance_ = declare_parameter("use_pose_with_covariance", false);
 
   /* twist measurement */
-  pnh_.param("twist_additional_delay", twist_additional_delay_, double(0.0));
-  pnh_.param("twist_rate", twist_rate_, double(10.0));  // used for covariance calculation
-  pnh_.param("twist_gate_dist", twist_gate_dist_, double(10000.0));  // Mahalanobis limit
-  pnh_.param("twist_stddev_vx", twist_stddev_vx_, double(0.2));
-  pnh_.param("twist_stddev_wz", twist_stddev_wz_, double(0.03));
-  pnh_.param("use_twist_with_covariance", use_twist_with_covariance_, bool(false));
+  twist_additional_delay_ = declare_parameter("twist_additional_delay", 0.0);
+  twist_rate_ = declare_parameter("twist_rate", 10.0);  // used for covariance calculation
+  twist_gate_dist_ = declare_parameter("twist_gate_dist", 10000.0);  // Mahalanobis limit
+  twist_stddev_vx_ = declare_parameter("twist_stddev_vx", 0.2);
+  twist_stddev_wz_ = declare_parameter("twist_stddev_wz", 0.03);
+  use_twist_with_covariance_ = declare_parameter("use_twist_with_covariance", false);
 
   /* process noise */
   double proc_stddev_yaw_c, proc_stddev_yaw_bias_c, proc_stddev_vx_c, proc_stddev_wz_c;
-  pnh_.param("proc_stddev_yaw_c", proc_stddev_yaw_c, double(0.005));
-  pnh_.param("proc_stddev_yaw_bias_c", proc_stddev_yaw_bias_c, double(0.001));
-  pnh_.param("proc_stddev_vx_c", proc_stddev_vx_c, double(5.0));
-  pnh_.param("proc_stddev_wz_c", proc_stddev_wz_c, double(1.0));
+  proc_stddev_yaw_c = declare_parameter("proc_stddev_yaw_c", 0.005);
+  proc_stddev_yaw_bias_c = declare_parameter("proc_stddev_yaw_bias_c", 0.001);
+  proc_stddev_vx_c = declare_parameter("proc_stddev_vx_c", 5.0);
+  proc_stddev_wz_c = declare_parameter("proc_stddev_wz_c", 1.0);
   if (!enable_yaw_bias_estimation_) {
     proc_stddev_yaw_bias_c = 0.0;
   }
