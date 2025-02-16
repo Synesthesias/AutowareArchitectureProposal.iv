@@ -102,6 +102,9 @@ EKFLocalizer::EKFLocalizer(const rclcpp::NodeOptions & node_options)
 
   dim_x_ex_ = dim_x_ * extend_state_step_;
 
+  tf_br_ = std::make_shared<tf2_ros::TransformBroadcaster>(
+    std::shared_ptr<rclcpp::Node>(this, [](auto) {}));
+
   initEKF();
 
   /* debug */
@@ -222,7 +225,7 @@ void EKFLocalizer::timerTFCallback()
   transformStamped.transform.rotation.z = current_ekf_pose_.pose.orientation.z;
   transformStamped.transform.rotation.w = current_ekf_pose_.pose.orientation.w;
 
-  tf_br_.sendTransform(transformStamped);
+  tf_br_->sendTransform(transformStamped);
 }
 
 /*
@@ -231,7 +234,7 @@ void EKFLocalizer::timerTFCallback()
 bool EKFLocalizer::getTransformFromTF(
   std::string parent_frame, std::string child_frame, geometry_msgs::msg::TransformStamped & transform)
 {
-  tf2_ros::Buffer tf_buffer;
+  tf2::BufferCore tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
   ros::Duration(0.1).sleep();
   if (parent_frame.front() == '/') parent_frame.erase(0, 1);
@@ -239,7 +242,7 @@ bool EKFLocalizer::getTransformFromTF(
 
   for (int i = 0; i < 50; ++i) {
     try {
-      transform = tf_buffer.lookupTransform(parent_frame, child_frame, ros::Time(0));
+      transform = tf_buffer.lookupTransform(parent_frame, child_frame, tf2::TimePointZero);
       return true;
     } catch (tf2::TransformException & ex) {
       RCLCPP_WARN(get_logger(), "%s", ex.what());
