@@ -182,17 +182,14 @@ void EKFLocalizer::setCurrentResult()
   current_ekf_pose_.pose.position.y = ekf_.getXelement(IDX::Y);
 
   tf2::Quaternion q_tf;
-  double roll, pitch, yaw;
+  double roll = 0.0, pitch = 0.0;
   if (current_pose_ptr_ != nullptr) {
     current_ekf_pose_.pose.position.z = current_pose_ptr_->pose.position.z;
     tf2::fromMsg(current_pose_ptr_->pose.orientation, q_tf); /* use Pose pitch and roll */
-    tf2::Matrix3x3(q_tf).getRPY(roll, pitch, yaw);
-  } else {
-    // current_ekf_pose_.pose.position.z = 0.0;
-    // roll = 0;
-    // pitch = 0;
+    double yaw_tmp;
+    tf2::Matrix3x3(q_tf).getRPY(roll, pitch, yaw_tmp);
   }
-  yaw = ekf_.getXelement(IDX::YAW) + ekf_.getXelement(IDX::YAWB);
+  double yaw = ekf_.getXelement(IDX::YAW) + ekf_.getXelement(IDX::YAWB);
   current_ekf_pose_.pose.orientation = createQuaternionFromRPY(roll, pitch, yaw);
 
   current_ekf_pose_no_yawbias_ = current_ekf_pose_;
@@ -391,7 +388,6 @@ void EKFLocalizer::predictKinematicsModel()
   Eigen::MatrixXd P_curr;
   ekf_.getLatestP(P_curr);
 
-  const int d_dim_x = dim_x_ex_ - dim_x_;
   const double yaw = X_curr(IDX::YAW);
   const double yaw_bias = X_curr(IDX::YAWB);
   const double vx = X_curr(IDX::VX);
@@ -474,7 +470,6 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::msg::PoseStamped &
   DEBUG_INFO(get_logger(), "delay_time: %f [s]", delay_time);
 
   /* Set yaw */
-  const double yaw_curr = ekf_.getXelement((unsigned int)(delay_step * dim_x_ + IDX::YAW));
   double yaw = tf2::getYaw(pose.pose.orientation);
   const double ekf_yaw = ekf_.getXelement(delay_step * dim_x_ + IDX::YAW);
   const double yaw_error = normalizeYaw(yaw - ekf_yaw);  // normalize the error not to exceed 2 pi
