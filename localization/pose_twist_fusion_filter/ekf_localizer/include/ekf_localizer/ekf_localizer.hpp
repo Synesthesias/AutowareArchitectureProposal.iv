@@ -138,27 +138,27 @@ private:
   /**
    * @brief set pose measurement
    */
-  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr & msg);
+  void callbackPose(const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg);
 
   /**
    * @brief set twist measurement
    */
-  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr & msg);
+  void callbackTwist(const geometry_msgs::msg::TwistStamped::ConstSharedPtr msg);
 
   /**
    * @brief set poseWithCovariance measurement
    */
-  void callbackPoseWithCovariance(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg);
+  void callbackPoseWithCovariance(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg);
 
   /**
    * @brief set twistWithCovariance measurement
    */
-  void callbackTwistWithCovariance(const geometry_msgs::TwistWithCovarianceStamped::ConstPtr & msg);
+  void callbackTwistWithCovariance(const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr msg);
 
   /**
    * @brief set initial_pose to current EKF pose
    */
-  void callbackInitialPose(const geometry_msgs::PoseWithCovarianceStamped & msg);
+  void callbackInitialPose(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg);
 
   /**
    * @brief initialization of EKF
