@@ -236,7 +236,7 @@ bool EKFLocalizer::getTransformFromTF(
 {
   tf2::BufferCore tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
-  ros::Duration(0.1).sleep();
+  rclcpp::sleep_for(std::chrono::milliseconds(100));
   if (parent_frame.front() == '/') parent_frame.erase(0, 1);
   if (child_frame.front() == '/') child_frame.erase(0, 1);
 
@@ -246,7 +246,7 @@ bool EKFLocalizer::getTransformFromTF(
       return true;
     } catch (tf2::TransformException & ex) {
       RCLCPP_WARN(get_logger(), "%s", ex.what());
-      ros::Duration(0.1).sleep();
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
   }
   return false;
