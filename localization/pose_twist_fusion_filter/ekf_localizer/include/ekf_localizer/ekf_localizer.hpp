@@ -115,13 +115,13 @@ private:
   };
 
   /* for model prediction */
-  std::shared_ptr<geometry_msgs::TwistStamped>
+  geometry_msgs::msg::TwistStamped::SharedPtr
     current_twist_ptr_;                                           //!< @brief current measured twist
-  std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;  //!< @brief current measured pose
-  geometry_msgs::PoseStamped current_ekf_pose_;                   //!< @brief current estimated pose
-  geometry_msgs::PoseStamped
+  geometry_msgs::msg::PoseStamped::SharedPtr current_pose_ptr_;  //!< @brief current measured pose
+  geometry_msgs::msg::PoseStamped current_ekf_pose_;                   //!< @brief current estimated pose
+  geometry_msgs::msg::PoseStamped
     current_ekf_pose_no_yawbias_;                  //!< @brief current estimated pose w/o yaw bias
-  geometry_msgs::TwistStamped current_ekf_twist_;  //!< @brief current estimated twist
+  geometry_msgs::msg::TwistStamped current_ekf_twist_;  //!< @brief current estimated twist
   boost::array<double, 36ul> current_pose_covariance_;
   boost::array<double, 36ul> current_twist_covariance_;
 
