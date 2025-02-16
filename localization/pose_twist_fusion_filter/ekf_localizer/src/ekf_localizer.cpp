@@ -174,7 +174,7 @@ void EKFLocalizer::showCurrentX()
 void EKFLocalizer::setCurrentResult()
 {
   current_ekf_pose_.header.frame_id = pose_frame_id_;
-  current_ekf_pose_.header.stamp = ros::Time::now();
+  current_ekf_pose_.header.stamp = now();
   current_ekf_pose_.pose.position.x = ekf_.getXelement(IDX::X);
   current_ekf_pose_.pose.position.y = ekf_.getXelement(IDX::Y);
 
@@ -197,7 +197,7 @@ void EKFLocalizer::setCurrentResult()
     createQuaternionFromRPY(roll, pitch, ekf_.getXelement(IDX::YAW));
 
   current_ekf_twist_.header.frame_id = "base_link";
-  current_ekf_twist_.header.stamp = ros::Time::now();
+  current_ekf_twist_.header.stamp = now();
   current_ekf_twist_.twist.linear.x = ekf_.getXelement(IDX::VX);
   current_ekf_twist_.twist.angular.z = ekf_.getXelement(IDX::WZ);
 }
@@ -210,7 +210,7 @@ void EKFLocalizer::timerTFCallback()
   if (current_ekf_pose_.header.frame_id == "") return;
 
   geometry_msgs::TransformStamped transformStamped;
-  transformStamped.header.stamp = ros::Time::now();
+  transformStamped.header.stamp = now();
   transformStamped.header.frame_id = current_ekf_pose_.header.frame_id;
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = current_ekf_pose_.pose.position.x;
@@ -449,7 +449,7 @@ void EKFLocalizer::measurementUpdatePose(const geometry_msgs::PoseStamped & pose
   DEBUG_PRINT_MAT(X_curr.transpose());
 
   constexpr int dim_y = 3;  // pos_x, pos_y, yaw, depending on Pose output
-  const ros::Time t_curr = ros::Time::now();
+  const rclcpp::Time t_curr = now();
 
   /* Calculate delay step */
   double delay_time = (t_curr - pose.header.stamp).toSec() + pose_additional_delay_;
@@ -565,7 +565,7 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped & tw
   DEBUG_PRINT_MAT(X_curr.transpose());
 
   constexpr int dim_y = 2;  // vx, wz
-  const ros::Time t_curr = ros::Time::now();
+  const rclcpp::Time t_curr = now();
 
   /* Calculate delay step */
   double delay_time = (t_curr - twist.header.stamp).toSec() + twist_additional_delay_;
@@ -677,7 +677,7 @@ geometry_msgs::Quaternion EKFLocalizer::createQuaternionFromRPY(double r, double
  */
 void EKFLocalizer::publishEstimateResult()
 {
-  ros::Time current_time = ros::Time::now();
+  rclcpp::Time current_time = now();
   Eigen::MatrixXd X(dim_x_, 1);
   Eigen::MatrixXd P(dim_x_, dim_x_);
   ekf_.getLatestX(X);
