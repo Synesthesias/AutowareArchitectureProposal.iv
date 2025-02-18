@@ -749,3 +749,6 @@ double EKFLocalizer::normalizeYaw(const double & yaw) const
 {
   return std::atan2(std::sin(yaw), std::cos(yaw));
 }
+
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(EKFLocalizer)
