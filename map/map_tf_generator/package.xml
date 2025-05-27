@@ -1,17 +1,19 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>map_tf_generator</name>
   <version>0.1.0</version>
-  <description>The map_tf_generator package</description>
-  <maintainer email="azumi.suzuki@tier4.jp">azumi-suzuki</maintainer>
-  <license>Apache 2</license>
+  <description>Broadcasts a fixed transform from map to base_link</description>
+  <maintainer email="you@example.com">Your Name</maintainer>
+  <license>MIT</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>roscpp</depend>
-  <depend>std_msgs</depend>
+  <depend>rclcpp</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
 
-  <exec_depend>pcl_ros</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
