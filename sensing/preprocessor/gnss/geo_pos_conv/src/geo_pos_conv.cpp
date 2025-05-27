@@ -1,3 +1,47 @@
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/nav_sat_fix.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geo_pos_conv/geo_pos_conv.hpp"
+#include <cmath>
+
+class GeoPosConvNode : public rclcpp::Node
+{
+public:
+  GeoPosConvNode() : Node("geo_pos_conv")
+  {
+    gps_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+      "fix", 10,
+      std::bind(&GeoPosConvNode::gps_callback, this, std::placeholders::_1));
+
+    pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("pose", 10);
+
+    geo_.set_plane(7);  // 日本地域 (zone 7)
+  }
+
+private:
+  void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
+  {
+    geo_.set_llh(msg->latitude, msg->longitude, msg->altitude);
+
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.stamp = this->get_clock()->now();
+    pose.header.frame_id = "map";
+    pose.pose.position.x = geo_.x();
+    pose.pose.position.y = geo_.y();
+    pose.pose.position.z = geo_.z();
+
+    pose_pub_->publish(pose);
+
+    RCLCPP_INFO(this->get_logger(), "Published pose: x=%.3f, y=%.3f, z=%.3f",
+                geo_.x(), geo_.y(), geo_.z());
+  }
+
+  rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_sub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
+  geo_pos_conv geo_;
+};
+
 /*
  * Copyright 2020 Tier IV, Inc. All rights reserved.
  *
