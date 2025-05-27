@@ -1,27 +1,15 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(autoware_localization_srvs)
 
-find_package(catkin REQUIRED COMPONENTS
-  message_generation
-  std_msgs
-  geometry_msgs
+find_package(ament_cmake_auto REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+ament_auto_find_build_dependencies()
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/PoseArray.srv"
+  "srv/PoseWithCovarianceStamped.srv"
+  DEPENDENCIES geometry_msgs
 )
 
-add_service_files(
-  FILES
-  PoseWithCovarianceStamped.srv
-  PoseArray.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
-
-catkin_package(
-  CATKIN_DEPENDS
-  message_runtime
-  std_msgs
-  geometry_msgs
-)
+ament_auto_package()
