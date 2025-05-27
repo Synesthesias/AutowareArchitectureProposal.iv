@@ -1,3 +1,4 @@
+#include <rclcpp/rclcpp.hpp>
 /*
  * Copyright 2020 Tier IV, Inc. All rights reserved.
  *
@@ -19,7 +20,7 @@
 #include <GeographicLib/MGRS.hpp>
 #include <GeographicLib/UTMUPS.hpp>
 
-#include "gnss_poser/gnss_stat.h"
+#include "gnss_poser/gnss_stat.hpp"
 
 #include <geo_pos_conv/geo_pos_conv.hpp>
 
@@ -38,7 +39,7 @@ enum class MGRSPrecision {
 };
 // EllipsoidHeight:height above ellipsoid
 // OrthometricHeight:height above geoid
-double EllipsoidHeight2OrthometricHeight(const sensor_msgs::NavSatFix & nav_sat_fix_msg)
+double EllipsoidHeight2OrthometricHeight(const sensor_msgs::msg::NavSatFix & nav_sat_fix_msg)
 {
   double OrthometricHeight;
   try{
@@ -47,12 +48,12 @@ double EllipsoidHeight2OrthometricHeight(const sensor_msgs::NavSatFix & nav_sat_
     nav_sat_fix_msg.altitude, GeographicLib::Geoid::ELLIPSOIDTOGEOID);
   }
   catch(const GeographicLib::GeographicErr err){
-    ROS_ERROR_STREAM("Failed to convert Height from Ellipsoid to Orthometric" << err.what());
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("gnss_poser.convert"), "Failed to convert Height from Ellipsoid to Orthometric: " << err.what());
   }
   return OrthometricHeight;
 }
 
-GNSSStat NavSatFix2UTM(const sensor_msgs::NavSatFix & nav_sat_fix_msg)
+GNSSStat NavSatFix2UTM(const sensor_msgs::msg::NavSatFix & nav_sat_fix_msg)
 {
   GNSSStat utm;
   utm.coordinate_system = CoordinateSystem::UTM;
@@ -67,7 +68,7 @@ GNSSStat NavSatFix2UTM(const sensor_msgs::NavSatFix & nav_sat_fix_msg)
     utm.longitude = nav_sat_fix_msg.longitude;
     utm.altitude = nav_sat_fix_msg.altitude;
   } catch (const GeographicLib::GeographicErr err) {
-    ROS_ERROR_STREAM("Failed to convert from LLH to UTM" << err.what());
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("gnss_poser.convert"), "Failed to convert from LLH to UTM: " << err.what());
   }
   return utm;
 }
@@ -94,20 +95,20 @@ GNSSStat UTM2MGRS(const GNSSStat & utm, const MGRSPrecision & precision)
                      static_cast<int>(precision));  // set unit as [m]
     mgrs.z = utm.z;                                 // TODO
   } catch (const GeographicLib::GeographicErr err) {
-    ROS_ERROR_STREAM("Failed to convert from UTM to MGRS" << err.what());
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("gnss_poser.convert"), "Failed to convert from UTM to MGRS: " << err.what());
   }
   return mgrs;
 }
 
 GNSSStat NavSatFix2MGRS(
-  const sensor_msgs::NavSatFix & nav_sat_fix_msg, const MGRSPrecision & precision)
+  const sensor_msgs::msg::NavSatFix & nav_sat_fix_msg, const MGRSPrecision & precision)
 {
   const auto utm = NavSatFix2UTM(nav_sat_fix_msg);
   const auto mgrs = UTM2MGRS(utm, precision);
   return mgrs;
 }
 
-GNSSStat NavSatFix2PLANE(const sensor_msgs::NavSatFix & nav_sat_fix_msg, const int & plane_zone)
+GNSSStat NavSatFix2PLANE(const sensor_msgs::msg::NavSatFix & nav_sat_fix_msg, const int & plane_zone)
 {
   GNSSStat plane;
   plane.coordinate_system = CoordinateSystem::PLANE;
