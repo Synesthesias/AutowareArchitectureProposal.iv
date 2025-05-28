@@ -1,37 +1,19 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(map_tf_generator)
 
-add_compile_options(-std=c++14)
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  pcl_ros
-  tf2
-  tf2_ros
+ament_auto_add_executable(map_tf_generator_node
+  src/map_tf_generator.cpp
 )
 
-catkin_package()
-
-include_directories(
-  ${catkin_INCLUDE_DIRS}
+install(TARGETS map_tf_generator_node
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-add_executable(
-  map_tf_generator nodes/map_tf_generator.cpp
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
 )
 
-target_link_libraries(
-  map_tf_generator ${catkin_LIBRARIES}
-)
-
-install(TARGETS map_tf_generator
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(
-  DIRECTORY
-    launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+ament_auto_package()
