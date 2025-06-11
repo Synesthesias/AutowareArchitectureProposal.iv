@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-#include "ekf_localizer/ekf_localizer.h"
+ #include "ekf_localizer/ekf_localizer.hpp"
 
-int main(int argc, char ** argv)
-{
-  ros::init(argc, argv, "ekf_localizer");
-  EKFLocalizer obj;
-
-  ros::spin();
-
-  return 0;
-};
+ int main(int argc, char ** argv)
+ {
+   rclcpp::init(argc, argv);
+   EKFLocalizer obj;
+ 
+   rclcpp::spin(obj);
+ 
+   rclcpp::shutdown();
+ 
+   return 0;
+ }

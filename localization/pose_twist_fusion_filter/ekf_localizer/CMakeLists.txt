@@ -1,68 +1,37 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(ekf_localizer)
 
-add_compile_options(-std=c++14)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
 
-find_package(catkin REQUIRED
-  roscpp
-  std_msgs
-  tf2
-  tf2_ros
-  geometry_msgs
-  sensor_msgs
-  rostest
-  rosunit
-)
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
 
 find_package(Eigen3 REQUIRED)
-
-catkin_package(
-  INCLUDE_DIRS include
-  CATKIN_DEPENDS
-    roscpp
-    std_msgs
-    tf2
-    tf2_ros
-    geometry_msgs
-    sensor_msgs
-)
 
 ###########
 ## Build ##
 ###########
-
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIR}
+ament_auto_add_library(${PROJECT_NAME} SHARED
+  src/ekf_localizer.cpp
+  src/kalman_filter/kalman_filter.cpp
+  src/kalman_filter/time_delay_kalman_filter.cpp
 )
 
-add_executable(ekf_localizer
-src/ekf_localizer_node.cpp
-src/ekf_localizer.cpp
-src/kalman_filter/kalman_filter.cpp
-src/kalman_filter/time_delay_kalman_filter.cpp)
-add_dependencies(ekf_localizer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(ekf_localizer ${catkin_LIBRARIES})
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "EKFLocalizer"
+  EXECUTABLE ${PROJECT_NAME}_node
+  EXECUTOR SingleThreadedExecutor
+)
 
-#############
-## Install ##
-#############
-
-## Install executables and/or libraries
-install(TARGETS ekf_localizer
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-## Install project namespaced headers
-install(DIRECTORY include/ekf_localizer/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
-
-install(
-  DIRECTORY
-    launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+target_link_libraries(${PROJECT_NAME}
+  Eigen3::Eigen
 )
 
 #############
@@ -80,3 +49,8 @@ if(CATKIN_ENABLE_TESTING)
 
   target_link_libraries(ekf_localizer-test ${catkin_LIBRARIES})
 endif()
+
+ament_auto_package(
+  INSTALL_TO_SHARE
+    launch
+)
