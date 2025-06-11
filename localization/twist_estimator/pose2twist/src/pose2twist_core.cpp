@@ -1,75 +1,53 @@
-/*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-#include "pose2twist/pose2twist_core.h"
-
+#include "pose2twist/pose2twist_core.hpp"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <cmath>
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-
-Pose2Twist::Pose2Twist(ros::NodeHandle nh, ros::NodeHandle private_nh)
-: nh_(nh), private_nh_(private_nh)
+namespace
 {
-  pose_sub_ = nh_.subscribe("pose", 100, &Pose2Twist::callbackPose, this);
-
-  twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("twist", 10);
-  linear_x_pub_ = nh_.advertise<std_msgs::Float32>("linear_x", 10);
-  angular_z_pub_ = nh_.advertise<std_msgs::Float32>("angular_z", 10);
-}
-
-Pose2Twist::~Pose2Twist() {}
-
 double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
 {
   double diff_rad = lhs_rad - rhs_rad;
   if (diff_rad > M_PI) {
-    diff_rad = diff_rad - 2 * M_PI;
+    diff_rad -= 2.0 * M_PI;
   } else if (diff_rad < -M_PI) {
-    diff_rad = diff_rad + 2 * M_PI;
+    diff_rad += 2.0 * M_PI;
   }
   return diff_rad;
 }
 
-// x: roll, y: pitch, z: yaw
-geometry_msgs::Vector3 getRPY(const geometry_msgs::Pose & pose)
+geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::Pose & pose)
 {
-  geometry_msgs::Vector3 rpy;
+  geometry_msgs::msg::Vector3 rpy;
   tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf2::Matrix3x3(q).getRPY(rpy.x, rpy.y, rpy.z);
   return rpy;
 }
 
-geometry_msgs::Vector3 getRPY(const geometry_msgs::PoseStamped & pose) { return getRPY(pose.pose); }
-
-geometry_msgs::TwistStamped calcTwist(
-  const geometry_msgs::PoseStamped & pose_a, const geometry_msgs::PoseStamped & pose_b)
+geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::PoseStamped & pose)
 {
-  const double dt = (pose_b.header.stamp - pose_a.header.stamp).toSec();
+  return getRPY(pose.pose);
+}
 
-  if (dt == 0) {
-    geometry_msgs::TwistStamped twist;
-    twist.header = pose_b.header;
-    return twist;
-  }
+geometry_msgs::msg::TwistStamped calcTwist(
+  const geometry_msgs::msg::PoseStamped & pose_a,
+  const geometry_msgs::msg::PoseStamped & pose_b)
+{
+  rclcpp::Time time_a(pose_a.header.stamp);
+  rclcpp::Time time_b(pose_b.header.stamp);
+  const double dt = (time_b - time_a).seconds();
+
+  geometry_msgs::msg::TwistStamped twist;
+  twist.header = pose_b.header;
+  twist.header.frame_id = "base_link";
+
+  if (dt == 0.0) return twist;
 
   const auto pose_a_rpy = getRPY(pose_a);
   const auto pose_b_rpy = getRPY(pose_b);
 
-  geometry_msgs::Vector3 diff_xyz;
-  geometry_msgs::Vector3 diff_rpy;
+  geometry_msgs::msg::Vector3 diff_xyz;
+  geometry_msgs::msg::Vector3 diff_rpy;
 
   diff_xyz.x = pose_b.pose.position.x - pose_a.pose.position.x;
   diff_xyz.y = pose_b.pose.position.y - pose_a.pose.position.y;
@@ -78,38 +56,40 @@ geometry_msgs::TwistStamped calcTwist(
   diff_rpy.y = calcDiffForRadian(pose_b_rpy.y, pose_a_rpy.y);
   diff_rpy.z = calcDiffForRadian(pose_b_rpy.z, pose_a_rpy.z);
 
-  geometry_msgs::TwistStamped twist;
-  twist.header = pose_b.header;
   twist.twist.linear.x =
-    std::sqrt(std::pow(diff_xyz.x, 2.0) + std::pow(diff_xyz.y, 2.0) + std::pow(diff_xyz.z, 2.0)) /
-    dt;
-  twist.twist.linear.y = 0;
-  twist.twist.linear.z = 0;
+    std::sqrt(std::pow(diff_xyz.x, 2.0) + std::pow(diff_xyz.y, 2.0) + std::pow(diff_xyz.z, 2.0)) / dt;
   twist.twist.angular.x = diff_rpy.x / dt;
   twist.twist.angular.y = diff_rpy.y / dt;
   twist.twist.angular.z = diff_rpy.z / dt;
 
   return twist;
 }
+}  // namespace
 
-void Pose2Twist::callbackPose(const geometry_msgs::PoseStamped::ConstPtr & pose_msg_ptr)
+Pose2Twist::Pose2Twist(const rclcpp::Node::SharedPtr& node) : node_(node)
 {
-  // TODO check time stamp diff
-  // TODO check suddenly move
-  // TODO apply low pass filter
+  sub_pose_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "pose", 10, std::bind(&Pose2Twist::callback, this, std::placeholders::_1));
 
-  geometry_msgs::PoseStamped current_pose_msg = *pose_msg_ptr;
-  static geometry_msgs::PoseStamped prev_pose_msg = current_pose_msg;
-  geometry_msgs::TwistStamped twist_msg = calcTwist(prev_pose_msg, current_pose_msg);
-  prev_pose_msg = current_pose_msg;
-  twist_msg.header.frame_id = "base_link";
-  twist_pub_.publish(twist_msg);
+  pub_twist_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>("twist", 10);
+  pub_linear_x_ = node_->create_publisher<std_msgs::msg::Float32>("linear_x", 10);
+  pub_angular_z_ = node_->create_publisher<std_msgs::msg::Float32>("angular_z", 10);
+}
 
-  std_msgs::Float32 linear_x_msg;
+void Pose2Twist::callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  static geometry_msgs::msg::PoseStamped prev_pose = *msg;
+
+  geometry_msgs::msg::TwistStamped twist_msg = calcTwist(prev_pose, *msg);
+  prev_pose = *msg;
+
+  pub_twist_->publish(twist_msg);
+
+  std_msgs::msg::Float32 linear_x_msg;
   linear_x_msg.data = twist_msg.twist.linear.x;
-  linear_x_pub_.publish(linear_x_msg);
+  pub_linear_x_->publish(linear_x_msg);
 
-  std_msgs::Float32 angular_z_msg;
+  std_msgs::msg::Float32 angular_z_msg;
   angular_z_msg.data = twist_msg.twist.angular.z;
-  angular_z_pub_.publish(angular_z_msg);
+  pub_angular_z_->publish(angular_z_msg);
 }
