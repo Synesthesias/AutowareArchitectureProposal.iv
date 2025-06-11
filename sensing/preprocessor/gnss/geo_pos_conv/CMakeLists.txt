@@ -1,32 +1,23 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(geo_pos_conv)
 
-find_package(catkin REQUIRED COMPONENTS roscpp)
+# ament_cmake_auto使用
+find_package(ament_cmake_auto REQUIRED)
+set(AMENT_CMAKE_INCLUDE_INSTALL_DIR include/${PROJECT_NAME})
+ament_auto_find_build_dependencies()
 
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES geo_pos_conv
-)
+# ヘッダのインクルードディレクトリ
+include_directories(include)
 
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-)
-
-add_library(geo_pos_conv
+# ライブラリとしてビルド（実行ファイルではない）
+ament_auto_add_library(${PROJECT_NAME}
+  SHARED
   src/geo_pos_conv.cpp
 )
 
-target_link_libraries(geo_pos_conv
-  ${catkin_LIBRARIES}
-)
-
+# ヘッダを適切な場所にインストール
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  DESTINATION include/${PROJECT_NAME}
 )
 
-install(TARGETS geo_pos_conv
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+ament_auto_package()
