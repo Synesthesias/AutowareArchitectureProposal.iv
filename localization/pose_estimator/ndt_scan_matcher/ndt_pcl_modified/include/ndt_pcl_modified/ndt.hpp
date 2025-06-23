@@ -1,18 +1,16 @@
-/*
- * Copyright 2020 Tier IV, Inc. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2020 Tier IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 /*
  * Software License Agreement (BSD License)
  *
@@ -56,14 +54,14 @@
 #ifndef PCL_REGISTRATION_NDT_MODIFIED_H_
 #define PCL_REGISTRATION_NDT_MODIFIED_H_
 
-#include <pcl/registration/ndt.h>
-#include <unsupported/Eigen/NonLinearOptimization>
+#include "pcl/registration/ndt.h"
+#include "unsupported/Eigen/NonLinearOptimization"
 
 namespace pcl
 {
-template <typename PointSource, typename PointTarget>
+template<typename PointSource, typename PointTarget>
 class NormalDistributionsTransformModified
-: public NormalDistributionsTransform<PointSource, PointTarget>
+  : public NormalDistributionsTransform<PointSource, PointTarget>
 {
 protected:
   typedef typename Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
@@ -72,7 +70,7 @@ public:
   virtual void computeTransformation(
     PointCloudSource & output, const Eigen::Matrix4f & guess) override;
 
-  inline const Eigen::Matrix<double, 6, 6> getHessian() const { return hessian_; }
+  inline const Eigen::Matrix<double, 6, 6> getHessian() const {return hessian_;}
 
   inline const std::vector<Eigen::Matrix4f> getFinalTransformationArray() const
   {
@@ -101,8 +99,8 @@ protected:
   using NormalDistributionsTransform<PointSource, PointTarget>::step_size_;
   using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d1_;
   using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d2_;
-  using NormalDistributionsTransform<PointSource, PointTarget>::point_gradient_;
-  using NormalDistributionsTransform<PointSource, PointTarget>::point_hessian_;
+  // using NormalDistributionsTransform<PointSource, PointTarget>::point_gradient_;
+  // using NormalDistributionsTransform<PointSource, PointTarget>::point_hessian_;
   using NormalDistributionsTransform<PointSource, PointTarget>::trans_probability_;
 
   Eigen::Matrix<double, 6, 6> hessian_;

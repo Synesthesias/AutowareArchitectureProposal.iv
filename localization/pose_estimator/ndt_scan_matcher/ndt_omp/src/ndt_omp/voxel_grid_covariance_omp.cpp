@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Autoware Foundation
+// Copyright 2020 Tier IV, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,15 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "ndt_omp/voxel_grid_covariance_omp.hpp"
+#include "ndt_omp/voxel_grid_covariance_omp_impl.hpp"
 
-#ifndef NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
-#define NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
-
-#include "ndt/base.hpp"
-
-template<class PointSource, class PointTarget>
-NormalDistributionsTransformBase<PointSource, PointTarget>::NormalDistributionsTransformBase()
-{
-}
-
-#endif  // NORMAL_DISTRIBUTIONS_TRANSFORM_BASE_HPP
+template class ndt_omp::VoxelGridCovariance<pcl::PointXYZ>;
+template class ndt_omp::VoxelGridCovariance<pcl::PointXYZI>;
+template class ndt_omp::VoxelGridCovariance<pcl::PointXYZRGB>;
