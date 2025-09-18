@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(ndt_omp)
 
-# Silence warnings about *_ROOT variables (CMP0144)
-cmake_policy(SET CMP0144 NEW)
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif()
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 17)
