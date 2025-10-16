@@ -1,12 +1,19 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>geo_pos_conv</name>
   <version>0.1.0</version>
-  <description>The geo_pos_conv package</description>
+  <description>Geodetic position conversion utilities.</description>
   <maintainer email="ryo.watanabe@tier4.jp">Ryo Watanabe</maintainer>
   <maintainer email="tomo@axe.bz">Tomomi HORII</maintainer>
-  <license>Apache 2</license>
+  <license>Apache-2.0</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <depend>roscpp</depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+  <buildtool_export_depend>ament_cmake</buildtool_export_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
