@@ -1,66 +1,50 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(gnss_poser)
 
-add_compile_options(-std=c++14)
+find_package(ament_cmake_auto REQUIRED)
+find_package(PkgConfig REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
-  std_msgs
-  sensor_msgs
-  geometry_msgs
-  ublox_msgs
-  geo_pos_conv
+pkg_check_modules(GeographicLib REQUIRED geographiclib)
+
+ament_auto_find_build_dependencies()
+
+ament_auto_add_library(${PROJECT_NAME}_core SHARED
+  src/gnss_poser_core.cpp
 )
 
-find_package(PkgConfig)
-find_path(GeographicLib_INCLUDE_DIR GeographicLib/Config.h
-  PATH_SUFFIXES GeographicLib
-  )
-set(GeographicLib_INCLUDE_DIRS ${GeographicLib_INCLUDE_DIR})
-find_library(GeographicLib_LIBRARIES
-  NAMES Geographic
-)
+target_compile_features(${PROJECT_NAME}_core PUBLIC cxx_std_17)
 
-catkin_package(
-  INCLUDE_DIRS include
-)
-
-###########
-## Build ##
-###########
-
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
+target_include_directories(${PROJECT_NAME}_core PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
   ${GeographicLib_INCLUDE_DIRS}
 )
-link_directories(
-  /usr/local/lib
+
+if(GeographicLib_CFLAGS_OTHER)
+  target_compile_definitions(${PROJECT_NAME}_core PUBLIC ${GeographicLib_CFLAGS_OTHER})
+endif()
+
+target_link_libraries(${PROJECT_NAME}_core
+  ${GeographicLib_LIBRARIES}
 )
 
-add_executable(gnss_poser src/gnss_poser_node.cpp
-                          src/gnss_poser_core.cpp)
-
-add_dependencies(gnss_poser ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
- target_link_libraries(gnss_poser
-   ${catkin_LIBRARIES}
-   Geographic
- )
-
-#############
-## Install ##
-#############
-
-install(TARGETS gnss_poser
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ament_auto_add_executable(${PROJECT_NAME}
+  src/gnss_poser_node.cpp
 )
 
-install(
-  DIRECTORY
-    launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_core)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
 )
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_auto_package()

@@ -25,14 +25,6 @@ This package use GeographicLib to calculate coordinates.
 
         geographiclib-get-geoids best
 
-### Ublox
-
-If you use ublox GNSS receriver, install below package.
-This allow to obtain heading while vehicle is stopping.
-
-1. Download package <https://github.com/KumarRobotics/ublox.git>
-2. build package
-
 ### gnss_poser package
 
 This package use gnss package in autoware.
@@ -42,11 +34,7 @@ This package use gnss package in autoware.
 
 ## Usage
 
-    roslaunch gnss_poser gnss_poser.launch
-For ublox GNSS receriver
-
-    roslaunch gnss_poser ubloxfix2mgrs.launch
-
+    ros2 launch gnss_poser gnss_poser.launch.xml
 ## Configuration
 
 This package use egm2008-1 for geoid datasets.
