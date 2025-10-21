@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<launch xmlns="http://ros.org/schema/launch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<?xml version="1.0"?>
+<launch>
   <arg name="input_topic_fix" default="/fix" />
   <arg name="output_topic_gnss_pose" default="gnss_pose" />
   <arg name="output_topic_gnss_pose_cov" default="gnss_pose_cov" />
