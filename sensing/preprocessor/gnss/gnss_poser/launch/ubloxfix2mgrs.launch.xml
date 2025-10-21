@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch xmlns="http://ros.org/schema/launch" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <arg name="input_topic_fix" default="/ublox/fix" />
+
+  <include file="$(find-pkg-share gnss_poser)/launch/gnss_poser.launch.xml">
+    <arg name="input_topic_fix" value="$(var input_topic_fix)" />
+    <arg name="coordinate_system" value="1" />
+  </include>
+</launch>
