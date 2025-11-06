@@ -2,7 +2,7 @@
 
 ## 概要
 
-- `sensor_msgs/msg/PointCloud2` を処理するコンポーネント郡
+- `sensor_msgs/msg/PointCloud2` を処理するコンポーネント群
 - **ConcatenateDataNode**: 複数の LiDAR ストリームを購読し、共通フレームへ変換したうえで、結合した点群を出
   - 任意で Twist によるモーション補償も適用
 - **DistanceBasedCompareMapFilterNode**: 入力点群を参照マップと比較し、ユーザが設定した距離の閾値以内の点のみを残し、出力
