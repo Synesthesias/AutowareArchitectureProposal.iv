@@ -41,8 +41,10 @@
 | `max_twist_dt`           | double       | `0.1`                   | 補償に利用する Twist サンプル間の最大許容時差（秒）      |
 
 #### required tf
-- `output_frame` を指定し、入力点群の `header.frame_id` と異なる場合:
-	- それぞれの入力フレーム -> `output_frame` の TF が必要（対象時刻でのルックアップ）
+- センサフレームと異なる文字列(文字数>0)が `output_frame` に指定されている場合:
+	- センサフレーム -> `output_frame`
+- それ以外の場合:
+    - なし
 
 #### provided tf
 - なし
