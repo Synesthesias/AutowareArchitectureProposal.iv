@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="input_pose_topic" default="/localization/pose_estimator/pose" description="Pose topic to subscribe"/>
+  <arg name="output_twist_topic" default="/estimate_twist" description="Twist topic to publish"/>
+  <arg name="twist_frame_id" default="base_link" description="Frame ID for published twist"/>
+  <arg name="params_file" default="$(find-pkg-share pose2twist)/params/pose2twist.param.yaml" description="YAML file with additional parameters"/>
+
+  <node pkg="pose2twist" exec="pose2twist_node" name="pose2twist" output="log">
+    <remap from="pose" to="$(var input_pose_topic)"/>
+    <remap from="twist" to="$(var output_twist_topic)"/>
+    <param from="$(var params_file)"/>
+    <param name="twist_frame_id" value="$(var twist_frame_id)"/>
+  </node>
+</launch>
