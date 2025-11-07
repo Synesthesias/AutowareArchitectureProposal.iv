@@ -101,7 +101,7 @@ protected:
   using NormalDistributionsTransform<PointSource, PointTarget>::step_size_;
   using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d1_;
   using NormalDistributionsTransform<PointSource, PointTarget>::gauss_d2_;
-  using NormalDistributionsTransform<PointSource, PointTarget>::point_gradient_;
+  using NormalDistributionsTransform<PointSource, PointTarget>::point_jacobian_;
   using NormalDistributionsTransform<PointSource, PointTarget>::point_hessian_;
   using NormalDistributionsTransform<PointSource, PointTarget>::trans_probability_;
 
