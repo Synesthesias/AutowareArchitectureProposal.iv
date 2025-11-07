@@ -1,45 +1,29 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(ndt)
 
-add_compile_options(-std=c++14)
+find_package(ament_cmake_auto REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common io registration)
 
-find_package(catkin REQUIRED COMPONENTS
-  ndt_pcl_modified
-  ndt_omp_modified
-)
-find_package(PCL REQUIRED COMPONENTS common)
+ament_auto_find_build_dependencies()
 
-catkin_package(
-  INCLUDE_DIRS include
-)
-
-include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-add_library(ndt
+ament_auto_add_library(${PROJECT_NAME} SHARED
   src/base.cpp
   src/pcl_generic.cpp
   src/pcl_modified.cpp
   src/omp.cpp
 )
 
-add_dependencies(ndt
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${PCL_INCLUDE_DIRS}
 )
 
-target_link_libraries(ndt ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
 
-install(
-  TARGETS
-    ndt
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(DIRECTORY include/
+  DESTINATION include
 )
 
-## Install project namespaced headers
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
+ament_auto_package()
