@@ -1,0 +1,4 @@
+pose_initializer:
+  ros__parameters:
+    use_first_gnss_topic: true
+    map_frame: map
