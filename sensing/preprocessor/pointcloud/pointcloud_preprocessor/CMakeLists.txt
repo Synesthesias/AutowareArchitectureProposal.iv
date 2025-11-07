@@ -22,6 +22,8 @@ target_compile_definitions(pointcloud_preprocessor_component
 
 target_include_directories(pointcloud_preprocessor_component
   PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
     ${PCL_INCLUDE_DIRS})
 
 target_compile_definitions(pointcloud_preprocessor_component
@@ -45,5 +47,9 @@ ament_auto_add_executable(distance_based_compare_map_filter_node
 target_link_libraries(distance_based_compare_map_filter_node pointcloud_preprocessor_component)
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
+)
 
 ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

@@ -30,8 +30,16 @@ ament_auto_add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} ${PACKAGE_LIB})
 
-install(DIRECTORY include/
+install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION include/${PROJECT_NAME}
+)
+
+install(DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config
+)
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
 )
 
 if(BUILD_TESTING)
@@ -39,9 +47,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package(
-  INSTALL_TO_SHARE
-    config
-    launch
-  USE_SCOPED_HEADER_INSTALL_DIR
-)
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

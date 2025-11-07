@@ -11,13 +11,13 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
-install(DIRECTORY include/
-  DESTINATION include
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -25,4 +25,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package()
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

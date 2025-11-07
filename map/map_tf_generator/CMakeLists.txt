@@ -13,7 +13,7 @@ target_compile_features(${PROJECT_NAME}_core PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME}_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
 ament_auto_add_executable(${PROJECT_NAME}
@@ -37,4 +37,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package()
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

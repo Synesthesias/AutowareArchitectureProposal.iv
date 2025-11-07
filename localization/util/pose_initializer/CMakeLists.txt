@@ -18,7 +18,8 @@ ament_auto_add_library(${PROJECT_NAME}_component SHARED
 
 target_include_directories(${PROJECT_NAME}_component
   PUBLIC
-    include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
     ${PCL_INCLUDE_DIRS}
 )
 
@@ -37,7 +38,16 @@ rclcpp_components_register_nodes(${PROJECT_NAME}_component "pose_initializer::Po
 ament_auto_add_executable(${PROJECT_NAME}_node src/pose_initializer_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_component)
 
-ament_auto_package(
-  INSTALL_TO_SHARE launch params
-  USE_SCOPED_HEADER_INSTALL_DIR
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
 )
+
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
+
+install(DIRECTORY params/
+  DESTINATION share/${PROJECT_NAME}/params
+)
+
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
