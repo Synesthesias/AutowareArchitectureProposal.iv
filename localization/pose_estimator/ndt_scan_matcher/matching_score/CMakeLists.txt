@@ -1,25 +1,29 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(matching_score)
 
-add_compile_options(-std=c++14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(catkin REQUIRED)
+find_package(ament_cmake_auto REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common)
 
-catkin_package()
+ament_auto_find_build_dependencies()
 
-include_directories(include ${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-add_library(matching_score src/matching_score.cpp)
-
-target_link_libraries(matching_score ${catkin_LIBRARIES})
-
-install(
-  TARGETS
-    matching_score
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ament_auto_add_library(${PROJECT_NAME} SHARED
+  src/matching_score.cpp
 )
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+    ${PCL_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
+
+install(DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
+
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
