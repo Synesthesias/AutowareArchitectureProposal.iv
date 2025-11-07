@@ -1,70 +1,74 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(ndt_omp_modified)
 
-# -mavx causes a lot of errors!!
-add_definitions(-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
-set(CMAKE_CXX_FLAGS "-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# warn performance issue of ndt_omp which is NOT built in release mode
-string(TOUPPER ${CMAKE_BUILD_TYPE} uppercase_CMAKE_BUILD_TYPE)
-if (NOT (${uppercase_CMAKE_BUILD_TYPE} STREQUAL "RELEASE"))
-  message(WARNING
-    "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} may cause a serious performance degradation. Please configure with -DCMAKE_BUILD_TYPE=Release.")
-endif()
-
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  pcl_ros
-)
-
+find_package(ament_cmake_auto REQUIRED)
 find_package(OpenMP)
-if (OPENMP_FOUND)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
+find_package(PCL REQUIRED COMPONENTS common filters io registration)
 
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ndt_omp
-  CATKIN_DEPENDS
-)
+ament_auto_find_build_dependencies()
 
-###########
-## Build ##
-###########
-
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-)
-
-add_library(ndt_omp
+ament_auto_add_library(${PROJECT_NAME} SHARED
   src/ndt_omp/voxel_grid_covariance_omp.cpp
   src/ndt_omp/ndt_omp.cpp
 )
 
-add_executable(align
-  apps/align.cpp
-)
-add_dependencies(align
-  ndt_omp
-)
-# pcl 1.7 causes a segfault without -O2 (or -O3) flag
-target_compile_options(ndt_omp PUBLIC
-  $<$<CONFIG:Debug>:-O2 -g>
-)
-target_link_libraries(align
-  ${catkin_LIBRARIES}
-  ndt_omp
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${PCL_INCLUDE_DIRS}
 )
 
-install(TARGETS ndt_omp
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+target_compile_definitions(${PROJECT_NAME}
+  PUBLIC
+    ${PCL_DEFINITIONS}
 )
 
-## Install project namespaced headers
-install(DIRECTORY include/ndt_omp/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+target_compile_options(${PROJECT_NAME}
+  PRIVATE
+    -msse
+    -msse2
+    -msse3
+    -msse4
+    -msse4.1
+    -msse4.2
 )
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_CXX)
+endif()
+
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
+
+target_compile_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:-O2 -g>)
+
+ament_auto_add_executable(align apps/align.cpp)
+target_link_libraries(align ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+target_compile_options(align
+  PRIVATE
+    -msse
+    -msse2
+    -msse3
+    -msse4
+    -msse4.1
+    -msse4.2
+)
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(align OpenMP::OpenMP_CXX)
+endif()
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+install(DIRECTORY data/
+  DESTINATION share/${PROJECT_NAME}/data
+)
+
+ament_auto_package()

@@ -1,33 +1,32 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(ndt_pcl_modified)
 
-add_compile_options(-std=c++14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(catkin REQUIRED)
+find_package(ament_cmake_auto REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common)
 
-catkin_package(
-  INCLUDE_DIRS include
-)
+ament_auto_find_build_dependencies()
 
-include_directories(include ${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-add_library(ndt_pcl_modified
+ament_auto_add_library(${PROJECT_NAME} SHARED
   src/ndt.cpp
 )
 
-target_link_libraries(ndt_pcl_modified ${catkin_LIBRARIES})
-
-install(
-  TARGETS
-    ndt_pcl_modified
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  ${PCL_INCLUDE_DIRS}
 )
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${PCL_DEFINITIONS})
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
+
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  DESTINATION include/${PROJECT_NAME}
 )
+
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

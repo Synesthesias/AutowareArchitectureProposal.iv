@@ -1,57 +1,31 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(ndt_scan_matcher)
 
-add_compile_options(-std=c++14)
+find_package(ament_cmake_auto REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  tf2
-  tf2_ros
-  tf2_sensor_msgs
-  tf2_geometry_msgs
-  std_msgs
-  geometry_msgs
-  sensor_msgs
-  nav_msgs
-  visualization_msgs
-  diagnostic_msgs
-  pcl_conversions
-  pcl_ros
-  dynamic_reconfigure
-  ndt_pcl_modified
-  ndt_omp_modified
-  ndt
-  autoware_localization_srvs
-)
+ament_auto_find_build_dependencies()
 
-catkin_package(
-  INCLUDE_DIRS include
-)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
-
-add_executable(ndt_scan_matcher
-  src/ndt_scan_matcher_node.cpp
+ament_auto_add_library(ndt_scan_matcher_component SHARED
   src/ndt_scan_matcher_core.cpp
 )
 
-add_dependencies(ndt_scan_matcher
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
+rclcpp_components_register_nodes(ndt_scan_matcher_component "NDTScanMatcherComponent")
 
-target_link_libraries(ndt_scan_matcher ${catkin_LIBRARIES})
+target_include_directories(ndt_scan_matcher_component PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
-install(
-  TARGETS
-    ndt_scan_matcher
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+ament_auto_add_executable(ndt_scan_matcher_node src/ndt_scan_matcher_node.cpp)
+target_link_libraries(ndt_scan_matcher_node ndt_scan_matcher_component)
 
 install(
-  DIRECTORY
-    launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DIRECTORY include/
+  DESTINATION include
+)
+
+ament_auto_package(
+  INSTALL_TO_SHARE launch
 )

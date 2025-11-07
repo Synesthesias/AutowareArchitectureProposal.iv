@@ -19,7 +19,7 @@
 
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::NormalDistributionsTransformOMP()
-: ndt_ptr_(new ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>)
+: ndt_ptr_(pcl::make_shared<ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>>())
 {
 }
 
@@ -32,14 +32,14 @@ void NormalDistributionsTransformOMP<PointSource, PointTarget>::align(
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputTarget(
-  const boost::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr)
+  const pcl::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr)
 {
   ndt_ptr_->setInputTarget(map_ptr);
 }
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputSource(
-  const boost::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr)
+  const pcl::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr)
 {
   ndt_ptr_->setInputSource(scan_ptr);
 }
@@ -113,14 +113,14 @@ double NormalDistributionsTransformOMP<PointSource, PointTarget>::getFitnessScor
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<const pcl::PointCloud<PointTarget>>
+pcl::shared_ptr<const pcl::PointCloud<PointTarget>>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputTarget() const
 {
   return ndt_ptr_->getInputTarget();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<const pcl::PointCloud<PointSource>>
+pcl::shared_ptr<const pcl::PointCloud<PointSource>>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputSource() const
 {
   return ndt_ptr_->getInputSource();
@@ -149,7 +149,7 @@ Eigen::Matrix<double, 6, 6> NormalDistributionsTransformOMP<PointSource, PointTa
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<pcl::search::KdTree<PointTarget>>
+pcl::shared_ptr<pcl::search::KdTree<PointTarget>>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getSearchMethodTarget() const
 {
   return ndt_ptr_->getSearchMethodTarget();
