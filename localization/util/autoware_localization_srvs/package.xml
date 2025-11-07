@@ -1,19 +1,26 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>autoware_localization_srvs</name>
   <version>0.1.0</version>
   <description>The autoware_localization_srvs package</description>
   <maintainer email="yamato.ando@gmail.com">Yamato Ando</maintainer>
   <license>Apache 2</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <!-- Required by rosidl to recognize this as an interface package -->
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
 
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
