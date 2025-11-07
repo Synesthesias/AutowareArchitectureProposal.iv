@@ -31,7 +31,11 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/ndt.h>
-#include <ros/ros.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#include <chrono>
 #include <iostream>
 
 #include <ndt_omp/ndt_omp.h>
@@ -46,16 +50,20 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr align(
   registration->setInputSource(source_cloud);
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned(new pcl::PointCloud<pcl::PointXYZ>());
 
-  auto t1 = ros::WallTime::now();
+  const auto t1 = std::chrono::steady_clock::now();
   registration->align(*aligned);
-  auto t2 = ros::WallTime::now();
-  std::cout << "single : " << (t2 - t1).toSec() * 1000 << "[msec]" << std::endl;
+  const auto t2 = std::chrono::steady_clock::now();
+  std::cout << "single : "
+            << std::chrono::duration<double, std::milli>(t2 - t1).count() << "[msec]"
+            << std::endl;
 
   for (int i = 0; i < 10; i++) {
     registration->align(*aligned);
   }
-  auto t3 = ros::WallTime::now();
-  std::cout << "10times: " << (t3 - t2).toSec() * 1000 << "[msec]" << std::endl;
+  const auto t3 = std::chrono::steady_clock::now();
+  std::cout << "10times: "
+            << std::chrono::duration<double, std::milli>(t3 - t2).count() << "[msec]"
+            << std::endl;
   std::cout << "fitness: " << registration->getFitnessScore() << std::endl << std::endl;
 
   return aligned;
@@ -97,8 +105,6 @@ int main(int argc, char ** argv)
   voxelgrid.filter(*downsampled);
   source_cloud = downsampled;
 
-  ros::Time::init();
-
   // benchmark
   std::cout << "--- pcl::NDT ---" << std::endl;
   pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr ndt(
@@ -106,7 +112,10 @@ int main(int argc, char ** argv)
   ndt->setResolution(1.0);
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align(ndt, target_cloud, source_cloud);
 
-  std::vector<int> num_threads = {1, omp_get_max_threads()};
+  std::vector<int> num_threads = {1};
+#ifdef _OPENMP
+  num_threads.push_back(omp_get_max_threads());
+#endif
   std::vector<std::pair<std::string, ndt_omp::NeighborSearchMethod>> search_methods = {
     {"KDTREE", ndt_omp::KDTREE}, {"DIRECT7", ndt_omp::DIRECT7}, {"DIRECT1", ndt_omp::DIRECT1}};
 

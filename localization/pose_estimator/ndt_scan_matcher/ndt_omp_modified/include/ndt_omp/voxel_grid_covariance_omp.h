@@ -38,10 +38,16 @@
 #ifndef PCL_VOXEL_GRID_COVARIANCE_OMP_H_
 #define PCL_VOXEL_GRID_COVARIANCE_OMP_H_
 
-#include <pcl/filters/boost.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/memory.h>
 #include <pcl/point_types.h>
+
+#include <boost/mpl/size.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
+
 #include <map>
 #include <unordered_map>
 
@@ -83,8 +89,8 @@ protected:
   typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
 public:
-  typedef boost::shared_ptr<pcl::VoxelGrid<PointT> > Ptr;
-  typedef boost::shared_ptr<const pcl::VoxelGrid<PointT> > ConstPtr;
+  using Ptr = pcl::shared_ptr<pcl::VoxelGrid<PointT>>;
+  using ConstPtr = pcl::shared_ptr<const pcl::VoxelGrid<PointT>>;
 
   /** \brief Simple structure to hold a centroid, covarince and the number of points in a leaf.
    * Inverse covariance, eigen vectors and engen values are precomputed. */
