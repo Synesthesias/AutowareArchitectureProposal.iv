@@ -37,6 +37,7 @@
 #include <QObject>
 #include <QPushButton>
 #include <QString>
+#include <QWidget>
 
 #include <autoware_localization_srvs/srv/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
