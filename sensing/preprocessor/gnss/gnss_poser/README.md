@@ -1,68 +1,93 @@
 # gnss_poser
 
-## 概要
-`gnss_poser` パッケージは、GNSS の `NavSatFix` 観測値を車両ローカライゼーションのための map フレームの姿勢へ変換します。GNSS fix を取り込み、（UTM、MGRS、日本の平面直角座標の）座標変換を適用し、アンテナ位置に対して中央値フィルタを行い、車両のベースフレームに整合した姿勢を出力します。さらに、Fix 状態をブール値で出力し、 `map` から `gnss_base_link` への TF をブロードキャストします。
+## 概要 (Overview)
+- GNSS の `sensor_msgs/msg/NavSatFix` を受け取り、GeographicLib と `geo_pos_conv` を用いて UTM / MGRS / 日本の平面直角座標へ変換し、中央値フィルタ後の姿勢を `map` フレームで公開する
+- 状態判定に応じて `gnss_fixed` を出力し、`map`->`gnss_base_link` の TF もブロードキャストする
 
-## ノード概要
-| 名称         | 種別           | 説明                                                                                      |
-| ------------ | -------------- | ----------------------------------------------------------------------------------------- |
-| `gnss_poser` | `rclcpp::Node` | `NavSatFix` を購読し、スムージングした車両姿勢を公開し、TF をブロードキャストするノード。 |
+## 特長 (Key Features)
+- UTM / MGRS / 平面直角の座標変換と正高（Orthometric Height）補正を提供
+- GNSS アンテナ位置を中央値フィルタで平滑化し、差分ベクトルからヨー角を推定
+- `base_frame` と `gnss_frame` 間の静的 TF を参照し、車両ベース座標に投影
+- FIX 状態をboolトピックとタイムスタンプ付き姿勢で即時通知
+- 入力共分散が未知の場合はフォールバック共分散を自動付与
 
-## クイックスタート
-1. ワークスペースをビルド: `colcon build --packages-select gnss_poser`
-2. セットアップを読み込み: `source install/setup.bash`
-3. ノードを起動: `ros2 launch gnss_poser gnss_poser.launch.xml`
-4. 出力を確認: `ros2 topic echo /gnss_pose` および `ros2 topic echo /gnss_fixed`
+## ノード (Nodes)
+### GNSSPoser::GNSSPoser
+- **型**: `rclcpp::Node`
+- **役割**: `NavSatFix` を座標変換し、平滑化した姿勢と TF・状態を公開
 
-## 起動ファイル
-| 起動ファイル            | 目的                                                       | 主な引数                                                                                                  |
-| ----------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `gnss_poser.launch.xml` | トピックのリマップとフレーム設定を行った状態でノード起動。 | `input_topic_fix`, `output_topic_gnss_pose`, `coordinate_system`, `buff_epoch`, `plane_zone`, フレーム ID |
+#### 購読トピック (Subscribed Topics)
+| 名称  | 型                          | QoS       | 説明                                                |
+| ----- | --------------------------- | --------- | --------------------------------------------------- |
+| `fix` | `sensor_msgs/msg/NavSatFix` | `QoS(10)` | 緯度/経度/高度とステータス、共分散を含む GNSS Fix。 |
 
-## パラメータ
-| 名称                | 型       | 既定値           | 説明                                                    |
-| ------------------- | -------- | ---------------- | ------------------------------------------------------- |
-| `coordinate_system` | `int`    | `1`              | 変換に用いる座標系（`0:UTM`, `1:MGRS`, `2:PLANE`）。    |
-| `base_frame`        | `string` | `base_link`      | 出力姿勢の基準となる車両ベースフレーム。                |
-| `gnss_frame`        | `string` | `gnss`           | GNSS アンテナに紐づくフレーム。                         |
-| `gnss_base_frame`   | `string` | `gnss_base_link` | map フレーム下でブロードキャストされる子フレーム。      |
-| `map_frame`         | `string` | `map`            | 姿勢が出力されるグローバル基準フレーム。                |
-| `buff_epoch`        | `int`    | `1`              | 中央値フィルタのバッファ長（最低 1 に丸め）。           |
-| `plane_zone`        | `int`    | `9`              | `coordinate_system=2`（平面直角）のときに用いる系番号。 |
+#### 公開トピック (Published Topics)
+| 名称            | 型                                            | QoS       | 説明                                                                        |
+| --------------- | --------------------------------------------- | --------- | --------------------------------------------------------------------------- |
+| `gnss_pose`     | `geometry_msgs/msg/PoseStamped`               | `QoS(10)` | 座標変換＆中央値フィルタ後の車両姿勢。ヘッダは `map_frame`。                |
+| `gnss_pose_cov` | `geometry_msgs/msg/PoseWithCovarianceStamped` | `QoS(10)` | `gnss_pose` と同じ座標の共分散付き姿勢。未知共分散時は対角 10.0/10.0/10.0。 |
+| `gnss_fixed`    | `std_msgs/msg/Bool`                           | `QoS(10)` | `NavSatStatus` が `STATUS_FIX` 以上かを通知。                               |
 
-## Subscribed topics
-| トピック | 型                          | QoS | 説明                                                                |
-| -------- | --------------------------- | --- | ------------------------------------------------------------------- |
-| `fix`    | `sensor_msgs/msg/NavSatFix` | 10  | 緯度・経度・高度・状態・共分散を含む RTK もしくは GNSS フィックス。 |
+#### TF
+- ブロードキャスト: `map_frame` -> `gnss_base_frame`
+- 入力要件: `base_frame` -> `gnss_frame` の静的 TF（未提供時は警告し恒等変換）
 
-## Published topics
-| トピック        | 型                                            | QoS | 説明                                                                             |
-| --------------- | --------------------------------------------- | --- | -------------------------------------------------------------------------------- |
-| `gnss_pose`     | `geometry_msgs/msg/PoseStamped`               | 10  | 座標変換とベースフレーム整合後の `map` フレームにおける車両姿勢。                |
-| `gnss_pose_cov` | `geometry_msgs/msg/PoseWithCovarianceStamped` | 10  | 共分散付き姿勢。入力共分散が不明な場合は対角のフォールバック（10 m^2）を用いる。 |
-| `gnss_fixed`    | `std_msgs/msg/Bool`                           | 10  | 高品質（STATUS_FIX 以上）の GNSS ステータスを示すブール。                        |
+#### パラメータ (Parameters)
+| 名前                | 型       | 既定値           | 説明                                                          |
+| ------------------- | -------- | ---------------- | ------------------------------------------------------------- |
+| `coordinate_system` | `int`    | `1`              | `0:UTM` / `1:MGRS` / `2:PLANE` を選択。                       |
+| `base_frame`        | `string` | `base_link`      | 出力姿勢の基準となる車両フレーム。                            |
+| `gnss_frame`        | `string` | `gnss`           | GNSS アンテナに対応するフレーム名。                           |
+| `gnss_base_frame`   | `string` | `gnss_base_link` | TF で公開する子フレーム。                                     |
+| `map_frame`         | `string` | `map`            | 世界座標系の基準フレーム。                                    |
+| `buff_epoch`        | `int`    | `1`              | 中央値フィルタのバッファ長（1 未満を指定しても 1 に丸める）。 |
+| `plane_zone`        | `int`    | `9`              | 平面直角座標系（JGD2011）の系番号。                           |
 
-## TF フレーム
-- ブロードキャスト: 推定姿勢に基づく `map` -> `gnss_base_link`。
-- 入力要件: `gnss_frame` と `base_frame` の静的 TF。未提供の場合は警告を出し、恒等変換を仮定する。
+## 機能とテスト対応 (Feature-to-Test Traceability)
+| 機能 ID | 機能説明                                                                            | テスト ID | テストで検証する観点                                                                              |
+| ------- | ----------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| F-001   | UTM 座標系へ変換し、東距/北距と正高が基準値と一致する。                             | UT-GP-001 | `NavSatFix2UTM` が国土地理院ベンチマーク値と ±0.01 m 以内。                                       |
+| F-002   | MGRS 変換で指定精度 (0.1 mm) の桁が保持される。                                     | UT-GP-002 | `NavSatFix2MGRS` 出力が UTM 結果と整合し、`x/y` が ±0.1 m。                                       |
+| F-003   | 平面直角座標 (PLANE) で `geo_pos_conv` と同じ軸入れ替えを行う。                     | UT-GP-003 | `NavSatFix2PLANE` の `x/y` が `geo_pos_conv` の `y/x` と一致。                                    |
+| F-004   | UTM→MGRS 変換で指定精度ごとに桁落ちが変化する。                                     | UT-GP-004 | `UTM2MGRS` の結果桁が 1 m / 10 m 精度に応じて丸められる。                                         |
+| F-005   | Orthometric Height への変換が成功し、例外時は入力高度を保持しつつエラーログを出す。 | UT-GP-005 | `EllipsoidHeight2OrthometricHeight` が EGM2008 と ±0.05 m で一致し、異常時は警告+フォールバック。 |
+| F-006   | FIX 測位を受信すると中央値フィルタ後の姿勢/共分散/TF/固定フラグを出力する。         | IT-GP-001 | `gnss_pose`/`gnss_pose_cov`/`gnss_fixed` が正しい値と姿勢ヨーを出力。                             |
+| F-007   | `STATUS_NO_FIX` など非固定時は姿勢出力をスキップし `gnss_fixed=false` を通知。      | IT-GP-002 | `gnss_pose*` が未発行のまま、`gnss_fixed` が false。                                              |
+| F-008   | `buff_epoch>1` で中央値フィルタを満たすまで出力を抑制し、中央値を採用する。         | IT-GP-003 | 5 件バッファ後に中央値に従う姿勢とヨーが配信される。                                              |
+| F-009   | `base_frame->gnss_frame` TF が欠落しても恒等変換で継続し、警告を出す。              | IT-GP-004 | 恒等 TF で姿勢出力が継続し、警告ログがスロットル出力。                                            |
+| F-010   | 入力共分散が UNKNOWN の場合、フォールバック対角値を設定する。                       | IT-GP-005 | `gnss_pose_cov` の xyz 共分散が 10.0 に置換される。                                               |
 
-## サポートする座標系
-- **UTM (0)**: GeographicLib の UTMUPS を用いて東距/北距を算出し、ジオイド高補正を適用。
-- **MGRS (1)**: UTM を MGRS に変換。精度は設定可能（既定は 0.1 mm）。
-- **PLANE (2)**: `geo_pos_conv` による日本の平面直角座標系変換。`plane_zone` で系を指定。
+## 起動ファイル (Launch Files)
+| ファイル                       | 既定値/説明                                                                                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `launch/gnss_poser.launch.xml` | `input_topic_fix`, `output_topic_gnss_pose`, `coordinate_system`, `plane_zone`, `buff_epoch`, 各フレーム ID を引数化した XML launch。コンポーネント/単体ノードいずれにも対応。 |
 
-## フィルタリングと姿勢（ヨー）
-- `buff_epoch` 個のサンプルに対して、x/y/z の各軸で中央値フィルタを適用して外れ値を抑制。
-- ヨー角は最新の中央値と直前の中央値の差分ベクトルから算出（ロール/ピッチは 0）。
+起動例:
+```bash
+ros2 launch gnss_poser gnss_poser.launch.xml \
+	input_topic_fix:=/sensing/gnss/fix \
+	output_topic_gnss_pose:=/localization/gnss_pose \
+	coordinate_system:=2 plane_zone:=9 buff_epoch:=5
+```
 
-## テスト
-gtest による単体テストおよび ROS 2 launch testing を用いた結合テストの計画は `TEST_SPEC.md` を参照してください。
+## 使用方法 (Usage)
+1. 依存をビルド:
+	 ```bash
+	 colcon build --packages-select gnss_poser
+	 source install/setup.bash
+	 ```
+2. TF 構成を確認し、`ros2 launch gnss_poser gnss_poser.launch.xml` で起動。
+3. `ros2 topic echo /gnss_pose` や `tf2_echo map gnss_base_link` で出力を検証。
 
-## 既知の制約
-- 正高（Orthometric Height）への変換には EGM2008 のジオイドデータが必要。環境に GeographicLib のデータセットをインストールすること。
-- `NavSatFix.status` が劣化または NO_FIX の場合、姿勢出力は意図的にスキップされる。下流モジュールは `gnss_fixed` を監視すること。
-- GNSS アンテナと車両ベースフレームの静的 TF が不正確/未提供の場合、アンテナ位置基準の姿勢となり、車両原点との空間オフセットが生じうる。
+## テスト (Testing)
+- 仕様は `TEST_SPEC.md` を参照。単体テストは gtest、結合テストは `launch_testing_ros` を想定。
+- 実行例:
+	```bash
+	colcon test --packages-select gnss_poser
+	```
 
-## 参考文献
-- Autoware documentation: https://autowarefoundation.github.io/autoware-documentation
-- GeographicLib: https://geographiclib.sourceforge.io/
+## トラブルシューティング (Troubleshooting)
+- **Fix が false のまま**: `NavSatFix.status` を確認し、RTK 解や高精度モードになっているかをチェック。
+- **姿勢が出力されない**: `buff_epoch` に応じてバッファが溜まるのを待つか、`STATUS_FIX` のメッセージを送信してください。
+- **高さが期待と異なる**: `GEOGRAPHICLIB_DATA` が EGM2008 データを指すか確認。
+- **TF エラーが頻発**: `base_frame -> gnss_frame` の静的 TF を `ros2 run tf2_ros static_transform_publisher ...` で公開し、警告を解消します。
