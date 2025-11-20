@@ -1,53 +1,38 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.14)
 project(initial_pose_button_panel)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(catkin REQUIRED COMPONENTS
-  rviz
-  std_msgs
-  geometry_msgs
-  autoware_localization_srvs
-)
-
-if(rviz_QT_VERSION VERSION_LESS "5")
-  message(STATUS "Using Qt4 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt4 ${rviz_QT_VERSION} EXACT REQUIRED QtCore QtGui)
-  include(${QT_USE_FILE})
-else()
-  message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
-  set(QT_LIBRARIES Qt5::Widgets)
-endif()
-
-catkin_package(
-  DEPENDS rviz
-)
-
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
-
-
-add_definitions(-DQT_NO_KEYWORDS -g)
+find_package(ament_cmake_auto REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Widgets)
 
 set(CMAKE_AUTOMOC ON)
-set(SOURCE_FILES
+set(CMAKE_AUTOUIC OFF)
+set(CMAKE_AUTORCC OFF)
+
+ament_auto_find_build_dependencies()
+
+ament_auto_add_library(${PROJECT_NAME} SHARED
   src/initial_pose_button_panel.cpp
 )
 
-add_library(initial_pose_button_panel ${SOURCE_FILES} ${UIC_FILES})
-target_link_libraries(initial_pose_button_panel ${QT_LIBRARIES} ${catkin_LIBRARIES} ${rviz_DEFAULT_PLUGIN_LIBRARIES})
-
-install(TARGETS
-  ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
-install(
-  DIRECTORY
-    plugins
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+target_link_libraries(${PROJECT_NAME} Qt5::Widgets)
+target_compile_definitions(${PROJECT_NAME} PRIVATE QT_NO_KEYWORDS)
+
+pluginlib_export_plugin_description_file(rviz_common plugins/plugin_description.xml)
+
+install(DIRECTORY include/
+  DESTINATION include
 )
+
+install(DIRECTORY plugins/
+  DESTINATION share/${PROJECT_NAME}/plugins
+)
+
+ament_auto_package()
