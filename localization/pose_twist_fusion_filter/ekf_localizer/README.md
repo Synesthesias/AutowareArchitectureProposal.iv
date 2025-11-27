@@ -1,222 +1,123 @@
-# Overview
+# ekf_localizer
+
+## 概要 (Overview)
+`ekf_localizer` は 2D 走行モデルと新鮮な Pose/Twist 入力を拡張カルマンフィルタで融合し，自己位置姿勢と速度を滑らかに推定する ROS 2 コンポーネントです。Pose と Twist が異なる遅延やレートで届く自動運転ロボットを想定し，遅延補償，外れ値除去，およびヨー・バイアス推定を内包しています。
+
+### 特長 (Key Features)
+- おのおのの入力 Stamp を用いた遅延補償と過去状態参照により，センサ遅延や通信ばらつき下でも一貫した統合が可能
+- Pose/Twist それぞれに Mahalanobis ゲートと NaN/Inf フィルタを備え，異常測定を抑制
+- `enable_yaw_bias_estimation` により yaw バイアスをオンライン推定し，バイアスあり/なしの Pose を同時出力
+- `use_pose_with_covariance` / `use_twist_with_covariance` でメッセージ付属共分散または推定パラメータを選択
+- `tf_rate` で制御可能な `map -> base_link` TF と `~/debug` 系トピックで運用時の可視化を支援
+
+## ノード (Nodes)
+### ekf_localizer::EKFLocalizerComponent
+- **型**: `rclcpp_components::NodeFactory` からロードできるコンポーネント。`ekf_localizer` 実行ファイルで単体ノードとしても動作。
+- **役割**: Pose/Twist 測定の遅延を補償しながら状態予測・更新を繰り返し，Pose/Twist/TF/デバッグ情報を publish。
+
+#### 購読トピック (Subscribed Topics)
+| 名称                       | 型                                             | 説明                                                                                     |
+| -------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `initialpose`              | `geometry_msgs/msg/PoseWithCovarianceStamped`  | 推定状態のリセットに使用。QoS は Transient Local Reliable。                              |
+| `in_pose`                  | `geometry_msgs/msg/PoseStamped`                | Pose 測定 (covariance を使わないモード)。SensorDataQoS。                                 |
+| `in_pose_with_covariance`  | `geometry_msgs/msg/PoseWithCovarianceStamped`  | `use_pose_with_covariance=true` の際に利用。covariance を measurement noise として流用。 |
+| `in_twist`                 | `geometry_msgs/msg/TwistStamped`               | Twist 測定 (covariance を使わないモード)。                                               |
+| `in_twist_with_covariance` | `geometry_msgs/msg/TwistWithCovarianceStamped` | `use_twist_with_covariance=true` の際に利用。                                            |
+
+#### 公開トピック (Published Topics)
+| 名称                                       | 型                                             | 説明                                                                 |
+| ------------------------------------------ | ---------------------------------------------- | -------------------------------------------------------------------- |
+| `ekf_pose`                                 | `geometry_msgs/msg/PoseStamped`                | 推定 Pose。`pose_frame_id` を `frame_id` に設定。                    |
+| `ekf_pose_with_covariance`                 | `geometry_msgs/msg/PoseWithCovarianceStamped`  | Pose + 共分散。`ekf_pose` と同じ orientation (yaw bias 含む)。       |
+| `ekf_pose_without_yawbias`                 | `geometry_msgs/msg/PoseStamped`                | バイアスを除いた Pose。F-004 の検証対象。                            |
+| `ekf_pose_with_covariance_without_yawbias` | `geometry_msgs/msg/PoseWithCovarianceStamped`  | 上記 Pose の covariance 付きバージョン。                             |
+| `ekf_twist`                                | `geometry_msgs/msg/TwistStamped`               | 推定 Twist (`base_link` 基準)。                                      |
+| `ekf_twist_with_covariance`                | `geometry_msgs/msg/TwistWithCovarianceStamped` | Twist + 共分散。                                                     |
+| `~/estimated_yaw_bias`                     | `std_msgs/msg/Float64`                         | ヨー・バイアス推定値。F-004。                                        |
+| `~/debug`                                  | `std_msgs/msg/Float64MultiArray`               | `[estimated yaw [deg], measured yaw [deg], yaw bias [deg]]` 를格納。 |
+| `~/debug/measured_pose`                    | `geometry_msgs/msg/PoseStamped`                | 最新 Pose 測定をノード時間で再配信し，遅延補償結果を可視化。         |
+
+#### 公開 TF (Published TF)
+- `map` (既定 `pose_frame_id`) → `base_link` の `geometry_msgs/msg/TransformStamped` を `tf_rate` で配信。
+
+### 主なパラメータ (Key Parameters)
+パラメータは `config/ekf_localizer.param.yaml` で管理し，Launch から差し替え可能です。
+
+| カテゴリ       | パラメータ                   | 既定値  | 説明                                                                             |
+| -------------- | ---------------------------- | ------- | -------------------------------------------------------------------------------- |
+| 一般           | `predict_frequency`          | 50.0    | EKF 予測・publish 周波数 [Hz]。                                                  |
+|                | `tf_rate`                    | 10.0    | TF 送信周期 [Hz]。                                                               |
+|                | `extend_state_step`          | 50      | 遅延補償の最大ステップ数。`predict_frequency` と合わせて補償可能時間を決定。     |
+|                | `pose_frame_id`              | `map`   | 推定 Pose の出力フレーム。IT_EKFL_002 で上書き挙動をテスト。                     |
+| Yaw bias       | `enable_yaw_bias_estimation` | true    | バイアス推定と関連出力の有効化。                                                 |
+| Pose 入力      | `pose_additional_delay`      | 0.0     | Pose Stamp 誤差を補正する追加遅延 [s]。                                          |
+|                | `pose_gate_dist`             | 10000.0 | Pose Mahalanobis 距離しきい値。F-002 の要素。                                    |
+|                | `use_pose_with_covariance`   | false   | PoseWithCovariance を measurement noise として使用。                             |
+| Twist 入力     | `twist_additional_delay`     | 0.0     | Twist 用追加遅延 [s]。                                                           |
+|                | `twist_gate_dist`            | 10000.0 | Twist Mahalanobis しきい値。                                                     |
+|                | `use_twist_with_covariance`  | false   | TwistWithCovariance を利用するか。F-003 で切替テスト。                           |
+| プロセスノイズ | `proc_stddev_vx_c`           | 5.0     | 直進加速度ノイズ。                                                               |
+|                | `proc_stddev_wz_c`           | 1.0     | 角加速度ノイズ。                                                                 |
+|                | `proc_stddev_yaw_c`          | 0.005   | ヨーと角速度の相関ノイズ。                                                       |
+|                | `proc_stddev_yaw_bias_c`     | 0.001   | ヨー・バイアス変化ノイズ。`enable_yaw_bias_estimation=false` の場合は 0 に固定。 |
+
+詳細は `config/ekf_localizer.param.yaml` を参照してください。
+
+### 機能とテスト対応 (Feature-to-Test Traceability)
+| 機能 ID | 機能説明                                                                                      | テスト ID   | テストで検証する観点                                                                            |
+| ------- | --------------------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| F-001   | Pose Stamp を遅延補償しつつ EKF の過去状態へ正しく適用する。                                  | UT_EKFL_001 | 過去時刻で publish された Pose が `pose_frame_id` に変換されて出力へ反映される。                |
+| F-002   | Pose Mahalanobis ゲートで外れ値を拒否し、状態を保護する。                                     | UT_EKFL_002 | ゲート距離を超える測定後も推定結果が不連続にならず WARN を残す。                                |
+| F-003   | Twist 入力経路を `use_twist_with_covariance` に合わせて一意に選択する。                       | UT_EKFL_003 | パラメータ切替で `in_twist`/`in_twist_with_covariance` どちらが推定に使われるかが即座に変わる。 |
+| F-004   | Yaw バイアス推定を有効化すると Bias 付き/なし Pose と `~/estimated_yaw_bias` を同時提供する。 | UT_EKFL_004 | バイアス推定 ON/OFF で Pose orientation の差分とバイアス値が一致/消失する。                     |
+| F-005   | 既定 launch で Pose/Twist/TF/デバッグ出力を安定周波数で publish する。                        | IT_EKFL_001 | 50 Hz 付近で全出力と `map -> base_link` TF が継続配信される。                                   |
+| F-006   | Launch 引数のトピック remap と `pose_frame_id` 上書きが即時反映される。                       | IT_EKFL_002 | 入出力・TF の frame とトピック名が指定値へ切り替わる。                                          |
+
+## 起動ファイル (Launch Files)
+### `launch/ekf_localizer.launch.py`
+| 引数                                                | 既定値                                     | 説明                            |
+| --------------------------------------------------- | ------------------------------------------ | ------------------------------- |
+| `param_file`                                        | `config/ekf_localizer.param.yaml`          | YAML で渡すパラメータセット。   |
+| `input_initial_pose_topic`                          | `initialpose`                              | 初期化 Pose トピック。          |
+| `input_pose_topic`                                  | `in_pose`                                  | Pose 測定 (非共分散) トピック。 |
+| `input_pose_with_covariance_topic`                  | `in_pose_with_covariance`                  | PoseWithCovariance 入力。       |
+| `input_twist_topic`                                 | `in_twist`                                 | Twist 測定。                    |
+| `input_twist_with_covariance_topic`                 | `in_twist_with_covariance`                 | TwistWithCovariance 入力。      |
+| `output_pose_topic`                                 | `ekf_pose`                                 | Fused Pose 出力。               |
+| `output_pose_with_covariance_topic`                 | `ekf_pose_with_covariance`                 | Pose+cov。                      |
+| `output_pose_without_yawbias_topic`                 | `ekf_pose_without_yawbias`                 | Bias 除去 Pose。                |
+| `output_pose_with_covariance_without_yawbias_topic` | `ekf_pose_with_covariance_without_yawbias` | Bias 除去 Pose+cov。            |
+| `output_twist_topic`                                | `ekf_twist`                                | Twist 出力。                    |
+| `output_twist_with_covariance_topic`                | `ekf_twist_with_covariance`                | Twist+cov。                     |
+
+例: `ros2 launch ekf_localizer ekf_localizer.launch.py input_pose_topic:=/localization/pose`。
+
+## 設定 (Configuration)
+- 既定パラメータは `config/ekf_localizer.param.yaml` に格納されています。
+- `pose_frame_id`・QoS・ゲート閾値などは launch 時に `param_file` を差し替えることで一括変更できます。
+- 実システムに合わせて `pose_additional_delay` / `twist_additional_delay` を調整し、センサヘッダ時間のずれを補正してください。
+
+## 使用方法 (Usage)
+1. 依存ビルド
+   ```bash
+   colcon build --packages-select ekf_localizer
+   source install/setup.bash
+   ```
+2. 既定パラメータで起動
+   ```bash
+   ros2 launch ekf_localizer ekf_localizer.launch.py \
+     input_pose_topic:=/localization/pose \
+     input_twist_topic:=/localization/twist
+   ```
+3. コンポーネントコンテナへロードする場合は `component_container_mt` などに `ekf_localizer::EKFLocalizerComponent` を追加し，同じ引数で remap してください。
+
+## テスト (Testing)
+- 詳細シナリオと観測ポイントは `TEST_SPEC.md` を参照。
+- ユニットテスト: `colcon test --packages-select ekf_localizer --ctest-args -R ekf_localizer`。
+- 結合テスト (launch_testing): `colcon test --packages-select ekf_localizer --pytest-args -k ekf_launch` 等で実行できます。
+
+## トラブルシューティング (Troubleshooting)
+- Pose/Twist のヘッダ時間が系全体で単調増加しているか `ros2 topic hz`/`ros2 topic delay` で確認。負の遅延は F-001 の WARN を誘発します。
+- Pose フレームが `pose_frame_id` と一致していない場合は `map` への TF が必要です。`tf2_echo pose_frame_id pose.header.frame_id` で整合性を確認してください。
+- 推定が発散する場合は `pose_gate_dist` / `twist_gate_dist` を縮めて異常値を切り捨て、`proc_stddev_*` を調整してモデル追従性を上げてください。
 
-The **Extend Kalman Filter Localizer** estimates robust and less noisy robot pose and twist by integrating the 2D vehicle dynamics model with input ego-pose and ego-twist messages. The algorithm is designed especially for fast moving robot such as autonomous driving system.
-
-
-## Flowchart
-
-The overall flowchart of the ekf_localizer is described below.
-
-<p align="center">
-  <img src="./media/ekf_flowchart.png" width="800">
-</p>
-
-
-## Features
-This package includes the following features:
-
- - **Time delay compensation** for input messages, which enables proper integration of input information with varying time delay. This is important especially for high speed moving robot, such as autonomous driving vehicle. (see following figure). 
-- **Automatic estimation of yaw bias** prevents modeling errors caused by sensor mounting angle errors, which can improve estimation accuracy.
-- **Mahalanobis distance gate** enables probabilistic outlier detection to determine which inputs should be used or ignored.
-- **Smooth update**, the Kalman Filter measurement update is typically performed when a measurement is obtained, but it can cause large changes in the estimated value especially for low frequency measurements. Since the algorithm can consider the measurement time, the measurement data can be divided into multiple pieces and integrated smoothly while maintaining consistency (see following figure).
-
-
-<p align="center">
-<img src="./media/ekf_delay_comp.png" width="800">
-</p>
-
-####
-
-<p align="center">
-  <img src="./media/ekf_smooth_update.png" width="800">
-</p>
-
-# Launch
-
-The `ekf_localizer` starts with the default parameters with the following command.
-
-```
-roslaunch ekf_localizer ekf_localizer.launch
-```
-
-The parameters and input topic names can be set in the `ekf_localizer.launch` file.
-
-
-# Node
-
-## Subscribed Topics
- - measured_pose_with_covariance (geometry_msgs/PoseWithCovarianceStamped)
-
-    Input pose source with measurement covariance matrix, used when `use_pose_with_covariance` is true.
-
- - measured_twist_with_covariance (geometry_msgs/PoseWithCovarianceStamped)
-
-    Input twist source with measurement covariance matrix, used when `use_twist_with_covariance` is true.
-
- - measured_pose (geometry_msgs/PoseStamped)
-
-    Input pose source, used when `use_pose_with_covariance` is false.
-
- - measured_twist (geometry_msgs/TwistStamped)
-
-    Input twist source, used when `use_twist_with_covariance` is false.
-
- - initialpose (geometry_msgs/PoseWithCovarianceStamped)
-
-    Initial pose for EKF. The estimated pose is initialized with zeros at start. It is initialized with this message whenever published.
-
-
-## Published Topics
-
- - ekf_pose (geometry_msgs/PoseStamped)
-
-    Estimated pose.
-
- - ekf_pose_with_covariance (geometry_msgs/PoseWithCovarianceStamped)
-
-    Estimated pose with covariance.
- - ekf_pose_with_covariance (geometry_msgs/PoseStamped)
-
-    Estimated pose without yawbias effect.
-
- - ekf_pose_with_covariance_without_yawbias (geometry_msgs/PoseWithCovarianceStamped)
-
-    Estimated pose with covariance without yawbias effect.
-
- - ekf_twist (geometry_msgs/TwistStamped)
-
-    Estimated twist.
-
- - ekf_twist_with_covariance (geometry_msgs/TwistWithCovarianceStamped)
-
-    Estimated twist with covariance.
-
-
-## Published TF
-
- - base_link
-
-    TF from "map" coordinate to estimated pose.
-
-
-# Functions
-
-
-## Predict
-
-The current robot state is predicted from previously estimated data using a given prediction model. This calculation is called at constant interval (`predict_frequency [Hz]`). The prediction equation is described at the end of this page.
-
-
-## Measurement Update
-
-Before update, the Mahalanobis distance is calculated between the measured input and the predicted state, the measurement update is not performed for inputs where the Mahalanobis distance exceeds the given threshold. 
-
-The predicted state is updated with the latest measured inputs, measured_pose and measured_twist. The updates are performed with the same frequency as prediction, usually at a high frequency, in order to enable smooth state estimation. 
-
-
-
-
-
-# Parameter description
-
-The parameters are set in `launch/ekf_localizer.launch` .
-
-
-## For Node
-
-|Name|Type|Description|Default value|
-|:---|:---|:---|:---|
-|show_debug_info|bool|Flag to display debug info|false|
-|predict_frequency|double|Frequency for filtering and publishing [Hz]|50.0|
-|tf_rate|double|Frqcuency for tf broadcasting [Hz]|10.0|
-|extend_state_step|int|Max delay step which can be dealt with in EKF. Large number increases computational cost. |50|
-|enable_yaw_bias_estimation| bool |Flag to enable yaw bias estimation|true|
-
-## For pose measurement
-
-|Name|Type|Description|Default value|
-|:---|:---|:---|:---|
-|pose_additional_delay|double|Additional delay time for pose measurement [s]|0.0|
-|pose_measure_uncertainty_time|double|Measured time uncertainty used for covariance calculation [s]|0.01|
-|pose_rate|double|Approximated input pose rate used for covariance calculation [Hz]|10.0|
-|pose_gate_dist|double|Limit of Mahalanobis distance used for outliers detection|10000.0|
-|use_pose_with_covariance|bool|Flag to use covariance in pose_with_covarianve message|false|
-|pose_stddev_x|double|Standard deviation for pose position x [m] (used when use_pose_with_covariance is false)|0.05|
-|pose_stddev_y|double|Standard deviation for pose position y [m] (used when use_pose_with_covariance is false)|0.05|
-|pose_stddev_yaw|double|Standard deviation for pose yaw angle [rad] (used when use_pose_with_covariance is false)|0.025|
-
-## For twist measurement
-|Name|Type|Description|Default value|
-|:---|:---|:---|:---|
-|twist_additional_delay|double|Additional delay time for twist [s]|0.0|
-|twist_rate|double|Approximated input twist rate used for covariance calculation [Hz]|10.0|
-|twist_gate_dist|double|Limit of Mahalanobis distance used for outliers detection|10000.0|
-|use_twist_with_covariance|bool|Flag to use covariance in twist_with_covariance message|false|
-|twist_stddev_vx|double|Standard deviation for twist linear x [m/s] (used when use_twist_with_covariance is false) |0.2|
-|twist_stddev_wz|double|Standard deviation for twist angular z [rad/s] (used when use_twist_with_covariance is false) |0.03|
-
-## For process noise
-|Name|Type|Description|Default value|
-|:---|:---|:---|:---|
-|proc_stddev_vx_c|double|Standard deviation of process noise in time differentiation expression of linear velocity x, noise for d_vx = 0|2.0|
-|proc_stddev_wz_c|double|Standard deviation of process noise in time differentiation expression of angular velocity z, noise for d_wz = 0|0.2|
-|proc_stddev_yaw_c|double|Standard deviation of process noise in time differentiation expression of yaw, noise for d_yaw = omege |0.005|
-|proc_stddev_yaw_bias_c|double|Standard deviation of process noise in time differentiation expression of yaw_bias, noise for d_yaw_bias = 0|0.001|
-
-note: process noise for position x & y are calculated automatically from nonlinear dynamics.
-
-# How to turn EKF parameters
-
-**0. Preliminaries**
- - Check header time in pose and twist message is set to sensor time appropriately, because time delay is calculated from this value. If it is difficult to set appropriate time due to timer synchronization problem, use `twist_additional_delay` and `pose_additional_delay` to correct the time.
- - Check the relation between measurement pose and twist is appropriate (whether the derivative of pose has similar value to twist). This discrepancy is caused mainly by unit error (such as comfusing radian/degree) or bias noise, and it causes large estimation errors.
-
-
-**1. Set sensor parameters** 
-
-Set sensor-rate and standard-deviation from the basic information of the sensor. The `pose_measure_uncertainty_time` is for uncertainty of the header timestamp data.
-
- - `pose_measure_uncertainty_time`
- - `pose_rate`
- - `pose_stddev_x`
- - `pose_stddev_y`
- - `pose_stddev_yaw`
- - `twist_rate`
- - `twist_stddev_vx`
- - `twist_stddev_wz`
-
-**2. Set process model parameters**
-
-
- - `proc_stddev_vx_c` : set to maximum linear acceleration
- - `proc_stddev_wz_c` : set to maximum angular acceleration
- - `proc_stddev_yaw_c` : This parameter describes the correlation between the yaw and yaw-rate. Large value means the change in yaw does not correlate to the estiamted yaw-rate. If this is set to 0, it means the change in estimate yaw is equal to yaw-rate. Usually this should be set to 0.
- - `proc_stddev_yaw_bias_c` : This parameter is the standard deviation for the rate of change in yaw bias. In most cases, yaw bias is constant, so it can be very small, but must be non-zero. 
-
- **3. Tune sensor standard deviation parameters with rosbag simulation.**
- 
- If the position measurement seems more reliable, make these parameters smaller. If the estimated position seems to be noisy due to pose measurement noise, make these values bigger. 
-
-  - `pose_stddev_x`
-  - `pose_stddev_y`
-  - `pose_stddev_yaw`
-
- If the twist measurement seems more reliable, make these parameters smaller. If the estimated twist seems to be noisy due to pose measurement noise, make these values bigger. 
-  - `twist_stddev_vx`
-  - `twist_stddev_wz`
-
-# Kalman Filter Model
-
-## kinematics model in update function
-<img src="./media/ekf_dynamics.png" width="320">
-
-where `b_k` is the yaw-bias.
-
-## time delay model
-<img src="./media/delay_model_eq.png" width="320">
-
-# Test Result with Autoware NDT
-
-<p align="center">
-<img src="./media/ekf_autoware_res.png" width="600">
-</p>
