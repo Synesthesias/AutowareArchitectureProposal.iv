@@ -5,11 +5,13 @@ project(ndt_omp_modified)
 add_definitions(-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
 set(CMAKE_CXX_FLAGS "-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
 
-# warn performance issue of ndt_omp which is NOT built in release mode
-string(TOUPPER ${CMAKE_BUILD_TYPE} uppercase_CMAKE_BUILD_TYPE)
-if (NOT (${uppercase_CMAKE_BUILD_TYPE} STREQUAL "RELEASE"))
-  message(WARNING
-    "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} may cause a serious performance degradation. Please configure with -DCMAKE_BUILD_TYPE=Release.")
+# warn performance issue when not building in release mode
+if (CMAKE_BUILD_TYPE)
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
+  if (NOT uppercase_CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+    message(WARNING
+      "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} may cause a serious performance degradation. Please configure with -DCMAKE_BUILD_TYPE=Release.")
+  endif()
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
