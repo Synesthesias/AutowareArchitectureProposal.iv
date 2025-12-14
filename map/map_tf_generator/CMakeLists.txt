@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(map_tf_generator)
 
-add_compile_options(-std=c++14)
+# Build with C++17 to satisfy log4cxx/std::shared_mutex
+add_compile_options(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp

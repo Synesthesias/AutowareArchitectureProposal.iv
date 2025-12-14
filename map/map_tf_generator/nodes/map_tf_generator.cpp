@@ -24,7 +24,8 @@ typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 std::string map_frame_ = "map";
 std::string viewer_frame_ = "viewer";
 
-void Callback(const PointCloud::ConstPtr & clouds)
+// ROS hands a boost::shared_ptr here; use boost type explicitly to avoid std/boost mismatch
+void Callback(const boost::shared_ptr<const PointCloud> & clouds)
 {
   const unsigned int sum = clouds->points.size();
   double coordinate[3] = {0, 0, 0};
