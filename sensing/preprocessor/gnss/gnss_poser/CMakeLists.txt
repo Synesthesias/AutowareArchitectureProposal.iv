@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(gnss_poser)
 
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++17)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
