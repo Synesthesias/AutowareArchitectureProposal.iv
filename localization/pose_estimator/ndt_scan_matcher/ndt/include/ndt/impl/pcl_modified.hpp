@@ -20,7 +20,7 @@
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformPCLModified<
   PointSource, PointTarget>::NormalDistributionsTransformPCLModified()
-: ndt_ptr_(new pcl::NormalDistributionsTransformModified<PointSource, PointTarget>)
+: ndt_ptr_(pcl::make_shared<pcl::NormalDistributionsTransformModified<PointSource, PointTarget>>())
 {
 }
 
@@ -33,14 +33,14 @@ void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::align(
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::setInputTarget(
-  const boost::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr)
+  const typename pcl::PointCloud<PointTarget>::ConstPtr & map_ptr)
 {
   ndt_ptr_->setInputTarget(map_ptr);
 }
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformPCLModified<PointSource, PointTarget>::setInputSource(
-  const boost::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr)
+  const typename pcl::PointCloud<PointSource>::ConstPtr & scan_ptr)
 {
   ndt_ptr_->setInputSource(scan_ptr);
 }
@@ -116,14 +116,14 @@ double NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getFit
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<const pcl::PointCloud<PointTarget>>
+typename pcl::PointCloud<PointTarget>::ConstPtr
 NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getInputTarget() const
 {
   return ndt_ptr_->getInputTarget();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<const pcl::PointCloud<PointSource>>
+typename pcl::PointCloud<PointSource>::ConstPtr
 NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getInputSource() const
 {
   return ndt_ptr_->getInputSource();
@@ -151,7 +151,7 @@ NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getHessian() 
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<pcl::search::KdTree<PointTarget>>
+typename pcl::search::KdTree<PointTarget>::Ptr
 NormalDistributionsTransformPCLModified<PointSource, PointTarget>::getSearchMethodTarget() const
 {
   return ndt_ptr_->getSearchMethodTarget();

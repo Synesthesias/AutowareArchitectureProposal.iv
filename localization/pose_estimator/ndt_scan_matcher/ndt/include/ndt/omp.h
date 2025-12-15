@@ -19,7 +19,7 @@
 
 #include "ndt/base.h"
 
-#include <ndt_omp/ndt_omp.h>
+#include <pclomp/ndt_omp.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -33,8 +33,8 @@ public:
   ~NormalDistributionsTransformOMP() = default;
 
   void align(pcl::PointCloud<PointSource> & output, const Eigen::Matrix4f & guess) override;
-  void setInputTarget(const boost::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr) override;
-  void setInputSource(const boost::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr) override;
+  void setInputTarget(const typename pcl::PointCloud<PointTarget>::ConstPtr & map_ptr) override;
+  void setInputSource(const typename pcl::PointCloud<PointSource>::ConstPtr & scan_ptr) override;
 
   void setMaximumIterations(int max_iter) override;
   void setResolution(float res) override;
@@ -48,24 +48,26 @@ public:
   double getTransformationEpsilon() override;
   double getTransformationProbability() const override;
   double getFitnessScore() override;
-  boost::shared_ptr<const pcl::PointCloud<PointTarget>> getInputTarget() const override;
-  boost::shared_ptr<const pcl::PointCloud<PointSource>> getInputSource() const override;
+  typename pcl::PointCloud<PointTarget>::ConstPtr getInputTarget() const override;
+  typename pcl::PointCloud<PointSource>::ConstPtr getInputSource() const override;
   Eigen::Matrix4f getFinalTransformation() const override;
   std::vector<Eigen::Matrix4f> getFinalTransformationArray() const override;
 
   Eigen::Matrix<double, 6, 6> getHessian() const override;
 
-  boost::shared_ptr<pcl::search::KdTree<PointTarget>> getSearchMethodTarget() const override;
+  typename pcl::search::KdTree<PointTarget>::Ptr getSearchMethodTarget() const override;
 
   // only OMP Impl
   void setNumThreads(int n);
-  void setNeighborhoodSearchMethod(ndt_omp::NeighborSearchMethod method);
+  void setNeighborhoodSearchMethod(pclomp::NeighborSearchMethod method);
 
   int getNumThreads() const;
-  ndt_omp::NeighborSearchMethod getNeighborhoodSearchMethod() const;
+  pclomp::NeighborSearchMethod getNeighborhoodSearchMethod() const;
 
 private:
-  boost::shared_ptr<ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
+  pcl::shared_ptr<pclomp::NormalDistributionsTransform<PointSource, PointTarget>> ndt_ptr_;
+  int num_threads_{0};
+  pclomp::NeighborSearchMethod search_method_{pclomp::KDTREE};
 };
 
 #include "ndt/impl/omp.hpp"

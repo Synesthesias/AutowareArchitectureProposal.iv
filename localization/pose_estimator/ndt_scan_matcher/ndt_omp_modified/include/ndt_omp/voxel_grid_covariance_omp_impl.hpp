@@ -39,9 +39,13 @@
 #define PCL_VOXEL_GRID_COVARIANCE_IMPL_OMP_H_
 
 #include <pcl/common/common.h>
-#include <pcl/filters/boost.h>
+#include <pcl/common/point_tests.h>
+#include <pcl/pcl_macros.h>
+#include <pcl/point_types.h>
+#include <boost/random.hpp>
 #include <Eigen/Cholesky>
 #include <Eigen/Dense>
+#include <cmath>
 #include "voxel_grid_covariance_omp.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -134,8 +138,8 @@ void ndt_omp::VoxelGridCovariance<PointT>::applyFilter(PointCloud & output)
       if (!input_->is_dense)
         // Check if the point is invalid
         if (
-          !pcl_isfinite(input_->points[cp].x) || !pcl_isfinite(input_->points[cp].y) ||
-          !pcl_isfinite(input_->points[cp].z))
+          !std::isfinite(input_->points[cp].x) || !std::isfinite(input_->points[cp].y) ||
+          !std::isfinite(input_->points[cp].z))
           continue;
 
       // Get the distance value
@@ -204,8 +208,8 @@ void ndt_omp::VoxelGridCovariance<PointT>::applyFilter(PointCloud & output)
       if (!input_->is_dense)
         // Check if the point is invalid
         if (
-          !pcl_isfinite(input_->points[cp].x) || !pcl_isfinite(input_->points[cp].y) ||
-          !pcl_isfinite(input_->points[cp].z))
+          !std::isfinite(input_->points[cp].x) || !std::isfinite(input_->points[cp].y) ||
+          !std::isfinite(input_->points[cp].z))
           continue;
 
       int ijk0 = static_cast<int>(

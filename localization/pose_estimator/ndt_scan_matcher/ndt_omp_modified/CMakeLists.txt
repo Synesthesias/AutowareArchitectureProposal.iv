@@ -1,9 +1,14 @@
-cmake_minimum_required(VERSION 3.0.2)
-project(ndt_omp_modified)
+cmake_minimum_required(VERSION 3.10)
+project(ndt_omp_modified VERSION 0.0.0)
+
+# Use C++17 for modern PCL/ROS and log4cxx
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # -mavx causes a lot of errors!!
-add_definitions(-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
-set(CMAKE_CXX_FLAGS "-std=c++14 -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+add_definitions(-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
 
 # warn performance issue when not building in release mode
 if (CMAKE_BUILD_TYPE)

@@ -79,11 +79,6 @@ void pcl::NormalDistributionsTransformModified<PointSource, PointTarget>::comput
     transformPointCloud(output, output, guess);
   }
 
-  // Initialize Point Gradient and Hessian
-  point_gradient_.setZero();
-  point_gradient_.block(0, 0, 3, 3).setIdentity();
-  point_hessian_.setZero();
-
   Eigen::Transform<float, 3, Eigen::Affine, Eigen::ColMajor> eig_transformation;
   eig_transformation.matrix() = final_transformation_;
 

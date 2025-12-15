@@ -41,6 +41,7 @@
 #ifndef PCL_REGISTRATION_NDT_OMP_H_
 #define PCL_REGISTRATION_NDT_OMP_H_
 
+#include <pcl/memory.h>
 #include <pcl/registration/registration.h>
 #include "voxel_grid_covariance_omp.h"
 
@@ -86,8 +87,8 @@ protected:
   typedef typename TargetGrid::LeafConstPtr TargetGridLeafConstPtr;
 
 public:
-  typedef boost::shared_ptr<NormalDistributionsTransform<PointSource, PointTarget> > Ptr;
-  typedef boost::shared_ptr<const NormalDistributionsTransform<PointSource, PointTarget> > ConstPtr;
+  typedef pcl::shared_ptr<NormalDistributionsTransform<PointSource, PointTarget> > Ptr;
+  typedef pcl::shared_ptr<const NormalDistributionsTransform<PointSource, PointTarget> > ConstPtr;
 
   /** \brief Constructor.
    * Sets \ref outlier_ratio_ to 0.35, \ref step_size_ to 0.05 and \ref resolution_ to 1.0

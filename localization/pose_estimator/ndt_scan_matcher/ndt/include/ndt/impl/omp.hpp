@@ -19,7 +19,7 @@
 
 template <class PointSource, class PointTarget>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::NormalDistributionsTransformOMP()
-: ndt_ptr_(new ndt_omp::NormalDistributionsTransform<PointSource, PointTarget>)
+: ndt_ptr_(pcl::make_shared<pclomp::NormalDistributionsTransform<PointSource, PointTarget>>())
 {
 }
 
@@ -32,14 +32,14 @@ void NormalDistributionsTransformOMP<PointSource, PointTarget>::align(
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputTarget(
-  const boost::shared_ptr<pcl::PointCloud<PointTarget>> & map_ptr)
+  const typename pcl::PointCloud<PointTarget>::ConstPtr & map_ptr)
 {
   ndt_ptr_->setInputTarget(map_ptr);
 }
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformOMP<PointSource, PointTarget>::setInputSource(
-  const boost::shared_ptr<pcl::PointCloud<PointSource>> & scan_ptr)
+  const typename pcl::PointCloud<PointSource>::ConstPtr & scan_ptr)
 {
   ndt_ptr_->setInputSource(scan_ptr);
 }
@@ -113,14 +113,14 @@ double NormalDistributionsTransformOMP<PointSource, PointTarget>::getFitnessScor
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<const pcl::PointCloud<PointTarget>>
+typename pcl::PointCloud<PointTarget>::ConstPtr
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputTarget() const
 {
   return ndt_ptr_->getInputTarget();
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<const pcl::PointCloud<PointSource>>
+typename pcl::PointCloud<PointSource>::ConstPtr
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getInputSource() const
 {
   return ndt_ptr_->getInputSource();
@@ -137,7 +137,7 @@ template <class PointSource, class PointTarget>
 std::vector<Eigen::Matrix4f>
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getFinalTransformationArray() const
 {
-  return ndt_ptr_->getFinalTransformationArray();
+  return {ndt_ptr_->getFinalTransformation()};
 }
 
 template <class PointSource, class PointTarget>
@@ -149,7 +149,7 @@ Eigen::Matrix<double, 6, 6> NormalDistributionsTransformOMP<PointSource, PointTa
 }
 
 template <class PointSource, class PointTarget>
-boost::shared_ptr<pcl::search::KdTree<PointTarget>>
+typename pcl::search::KdTree<PointTarget>::Ptr
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getSearchMethodTarget() const
 {
   return ndt_ptr_->getSearchMethodTarget();
@@ -159,26 +159,28 @@ template <class PointSource, class PointTarget>
 void NormalDistributionsTransformOMP<PointSource, PointTarget>::setNumThreads(int n)
 {
   ndt_ptr_->setNumThreads(n);
+  num_threads_ = n;
 }
 
 template <class PointSource, class PointTarget>
 void NormalDistributionsTransformOMP<PointSource, PointTarget>::setNeighborhoodSearchMethod(
-  ndt_omp::NeighborSearchMethod method)
+  pclomp::NeighborSearchMethod method)
 {
   ndt_ptr_->setNeighborhoodSearchMethod(method);
+  search_method_ = method;
 }
 
 template <class PointSource, class PointTarget>
 int NormalDistributionsTransformOMP<PointSource, PointTarget>::getNumThreads() const
 {
-  return ndt_ptr_->getNumThreads();
+  return num_threads_;
 }
 
 template <class PointSource, class PointTarget>
-ndt_omp::NeighborSearchMethod
+pclomp::NeighborSearchMethod
 NormalDistributionsTransformOMP<PointSource, PointTarget>::getNeighborhoodSearchMethod() const
 {
-  return ndt_ptr_->getNeighborhoodSearchMethod();
+  return search_method_;
 }
 
 #endif
