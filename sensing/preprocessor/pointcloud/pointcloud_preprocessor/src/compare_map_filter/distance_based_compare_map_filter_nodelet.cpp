@@ -21,6 +21,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/segment_differences.h>
+#include <memory>
 
 namespace pointcloud_preprocessor
 {
@@ -86,7 +87,9 @@ void DistanceBasedCompareMapFilterNodelet::input_target_callback(const PointClou
       tree_.reset(new pcl::search::KdTree<pcl::PointXYZ>(false));
     }
   }
-  tree_->setInputCloud(map_ptr_);
+  auto map_ptr_std = pcl::search::Search<pcl::PointXYZ>::PointCloudConstPtr(
+    map_ptr_.get(), [](const pcl::PointCloud<pcl::PointXYZ> *) {});
+  tree_->setInputCloud(map_ptr_std);
 }
 
 void DistanceBasedCompareMapFilterNodelet::subscribe()
