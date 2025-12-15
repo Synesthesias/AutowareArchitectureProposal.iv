@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <memory>
 #include <thread>
 
 #include <tf/tf.h>
@@ -58,7 +59,7 @@ NDTScanMatcher::NDTScanMatcher(ros::NodeHandle nh, ros::NodeHandle private_nh)
 
     int search_method = static_cast<int>(omp_params_.search_method);
     private_nh_.getParam("omp_neighborhood_search_method", search_method);
-    omp_params_.search_method = static_cast<ndt_omp::NeighborSearchMethod>(search_method);
+    omp_params_.search_method = static_cast<pclomp::NeighborSearchMethod>(search_method);
     // TODO check search_method is valid value.
     ndt_omp_ptr->setNeighborhoodSearchMethod(omp_params_.search_method);
 
@@ -327,19 +328,19 @@ void NDTScanMatcher::callbackSensorPoints(
   const std::string sensor_frame = sensor_points_sensorTF_msg_ptr->header.frame_id;
   const auto sensor_ros_time = sensor_points_sensorTF_msg_ptr->header.stamp;
 
-  boost::shared_ptr<pcl::PointCloud<PointSource>> sensor_points_sensorTF_ptr(
-    new pcl::PointCloud<PointSource>);
+  const auto sensor_points_sensorTF_ptr = std::make_shared<pcl::PointCloud<PointSource>>();
   pcl::fromROSMsg(*sensor_points_sensorTF_msg_ptr, *sensor_points_sensorTF_ptr);
   // get TF base to sensor
   geometry_msgs::TransformStamped::Ptr TF_base_to_sensor_ptr(new geometry_msgs::TransformStamped);
   getTransform(base_frame_, sensor_frame, TF_base_to_sensor_ptr);
   const Eigen::Affine3d base_to_sensor_affine = tf2::transformToEigen(*TF_base_to_sensor_ptr);
   const Eigen::Matrix4f base_to_sensor_matrix = base_to_sensor_affine.matrix().cast<float>();
-  boost::shared_ptr<pcl::PointCloud<PointSource>> sensor_points_baselinkTF_ptr(
-    new pcl::PointCloud<PointSource>);
+  const auto sensor_points_baselinkTF_ptr = std::make_shared<pcl::PointCloud<PointSource>>();
   pcl::transformPointCloud(
     *sensor_points_sensorTF_ptr, *sensor_points_baselinkTF_ptr, base_to_sensor_matrix);
-  ndt_ptr_->setInputSource(sensor_points_baselinkTF_ptr);
+  const pcl::PointCloud<PointSource>::ConstPtr sensor_points_baselinkTF_const_ptr(
+    sensor_points_baselinkTF_ptr);
+  ndt_ptr_->setInputSource(sensor_points_baselinkTF_const_ptr);
 
   // check
   if (initial_pose_msg_ptr_array_.empty()) {
