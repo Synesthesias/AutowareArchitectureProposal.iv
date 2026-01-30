@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(catkin REQUIRED COMPONENTS
-  ndt_omp
   ndt_pcl_modified
   ndt_omp_modified
 )
@@ -14,14 +13,13 @@ find_package(PCL REQUIRED COMPONENTS common)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS ndt_omp ndt_pcl_modified ndt_omp_modified
+  CATKIN_DEPENDS ndt_pcl_modified ndt_omp_modified
 )
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  /home/yoshimaru/RideVision-VehicleLocalizer-Infra/colcon_ws/src/ndt_omp/include
 )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})

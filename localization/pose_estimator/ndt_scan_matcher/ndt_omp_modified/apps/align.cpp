@@ -34,7 +34,7 @@
 #include <ros/ros.h>
 #include <iostream>
 
-#include <ndt_omp/ndt_omp.h>
+#include <ndt_omp_modified/ndt_omp.h>
 
 // align point clouds and measure processing time
 pcl::PointCloud<pcl::PointXYZ>::Ptr align(

@@ -22,7 +22,7 @@
 #include <vector>
 
 #include <pcl/pcl_macros.h>
-#include <pcl/io/io.h>
+#include <pcl/common/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/memory.h>
 #include <pcl/point_types.h>
