@@ -80,14 +80,6 @@ bool PoseInitializer::serviceInitial(
     new geometry_msgs::PoseWithCovarianceStamped);
   getHeight(req.pose_with_cov, add_height_pose_msg_ptr);
 
-  // TODO
-  add_height_pose_msg_ptr->pose.covariance[0] = 1.0;
-  add_height_pose_msg_ptr->pose.covariance[1 * 6 + 1] = 1.0;
-  add_height_pose_msg_ptr->pose.covariance[2 * 6 + 2] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[3 * 6 + 3] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[4 * 6 + 4] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[5 * 6 + 5] = 1.0;
-
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(
     new geometry_msgs::PoseWithCovarianceStamped);
   const bool succeeded_align = callAlignService(*add_height_pose_msg_ptr, aligned_pose_msg_ptr);
@@ -109,14 +101,6 @@ void PoseInitializer::callbackInitialPose(
     new geometry_msgs::PoseWithCovarianceStamped);
   getHeight(*pose_cov_msg_ptr, add_height_pose_msg_ptr);
 
-  // TODO
-  add_height_pose_msg_ptr->pose.covariance[0] = 2.0;
-  add_height_pose_msg_ptr->pose.covariance[1 * 6 + 1] = 2.0;
-  add_height_pose_msg_ptr->pose.covariance[2 * 6 + 2] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[3 * 6 + 3] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[4 * 6 + 4] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[5 * 6 + 5] = 0.3;
-
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(
     new geometry_msgs::PoseWithCovarianceStamped);
   const bool succeeded_align = callAlignService(*add_height_pose_msg_ptr, aligned_pose_msg_ptr);
@@ -135,14 +119,6 @@ void PoseInitializer::callbackGNSSPoseCov(
   geometry_msgs::PoseWithCovarianceStamped::Ptr add_height_pose_msg_ptr(
     new geometry_msgs::PoseWithCovarianceStamped);
   getHeight(*pose_cov_msg_ptr, add_height_pose_msg_ptr);
-
-  // TODO
-  add_height_pose_msg_ptr->pose.covariance[0] = 1.0;
-  add_height_pose_msg_ptr->pose.covariance[1 * 6 + 1] = 1.0;
-  add_height_pose_msg_ptr->pose.covariance[2 * 6 + 2] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[3 * 6 + 3] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[4 * 6 + 4] = 0.01;
-  add_height_pose_msg_ptr->pose.covariance[5 * 6 + 5] = 3.14;
 
   geometry_msgs::PoseWithCovarianceStamped::Ptr aligned_pose_msg_ptr(
     new geometry_msgs::PoseWithCovarianceStamped);
@@ -196,13 +172,6 @@ bool PoseInitializer::callAlignService(
   ROS_INFO("[pose_initializer] call NDT Align Server");
   if (ndt_client_.call(srv)) {
     ROS_INFO("[pose_initializer] called NDT Align Server");
-    // NOTE temporary cov
-    srv.response.pose_with_cov.pose.covariance[0] = 1.0;
-    srv.response.pose_with_cov.pose.covariance[1 * 6 + 1] = 1.0;
-    srv.response.pose_with_cov.pose.covariance[2 * 6 + 2] = 0.01;
-    srv.response.pose_with_cov.pose.covariance[3 * 6 + 3] = 0.01;
-    srv.response.pose_with_cov.pose.covariance[4 * 6 + 4] = 0.01;
-    srv.response.pose_with_cov.pose.covariance[5 * 6 + 5] = 0.2;
     *output_pose_msg_ptr = srv.response.pose_with_cov;
     return true;
   } else {
