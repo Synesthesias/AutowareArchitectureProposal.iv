@@ -267,7 +267,7 @@ void EKFLocalizer::callbackInitialPose(const geometry_msgs::PoseWithCovarianceSt
   P(IDX::X, IDX::X) = initialpose.pose.covariance[0];
   P(IDX::Y, IDX::Y) = initialpose.pose.covariance[6 + 1];
   P(IDX::YAW, IDX::YAW) = initialpose.pose.covariance[6 * 5 + 5];
-  P(IDX::YAWB, IDX::YAWB) = 0.0001;
+  P(IDX::YAWB, IDX::YAWB) = enable_yaw_bias_estimation_ ? 0.0001 : 0.0;
   P(IDX::VX, IDX::VX) = 0.01;
   P(IDX::WZ, IDX::WZ) = 0.01;
 
